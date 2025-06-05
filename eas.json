@@ -1,0 +1,34 @@
+{
+  "cli": {
+    "version": ">=2.5.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+      "appleId": "rey.leandroe@gmail.com",
+      "ascAppId": "HQJ3UVB9BW",
+      "appleTeamId": "UT85CB823B",
+      "sku":"FarmerinApp",
+      "ascApiKeyId":"31c569e1-9f63-46fe-8f42-e24a30c038ea"
+      }
+    }
+  }
+}
