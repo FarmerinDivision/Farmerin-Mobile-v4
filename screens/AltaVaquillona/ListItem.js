@@ -8,16 +8,13 @@ export default function ListItem({ data, animales, guardarAnimales }) {
   const [nacim,setNacim]=useState('');
   
   useEffect(() => {
-
-    if (ingreso){
-      const n = format(new Date(ingreso+'T00:00:00.00-03:00'), 'dd/MM/yy');
-      //const n =new Date(ingreso).toUTCString(); 
+    const fechaValida = ingreso && !isNaN(new Date(ingreso + 'T00:00:00.00-03:00').getTime());
+    if (fechaValida) {
+      const n = format(new Date(ingreso + 'T00:00:00.00-03:00'), 'dd/MM/yy');
       setNacim(n);
-    }else{
-      setNacim('-')
+    } else {
+      setNacim('-');
     }
-
-      
   }, []);
 
   function cancelCambio() {

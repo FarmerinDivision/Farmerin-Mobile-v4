@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, Modal, FlatList, TextInput, ScrollView, ActivityIndicator, Image, TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TextInput, ScrollView, ActivityIndicator, Image, TouchableHighlight } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import DropDownPicker from 'react-native-dropdown-picker';
+
 //import 'expo-firestore-offline-persistence';
 
 
@@ -12,25 +14,23 @@ import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CriaItem from './CriaItem';
 import { format } from 'date-fns';
-import { Camera } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import RNPickerSelect from 'react-native-picker-select';
 import { MovieContext } from "../Contexto"
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
   const [fecha, setFecha] = useState(new Date());
-  const [movies, setMovies,trata] = useContext(MovieContext)
+  const { movies, setMovies, trata } = useContext(MovieContext)
 
   const route = useRoute();
-  const {animal} = route.params;
-  const {tambo} = route.params;
+  const { animal } = route.params;
+  const { tambo } = route.params;
   const [showfecha, setShowFecha] = useState(false);
-  const {usuario} = route.params;
-    const [show, setShow] = useState(false);
+  const { usuario } = route.params;
+  const [show, setShow] = useState(false);
   const [permisos, setPermisos] = useState(null);
-  let cam;
   const [alerta, setAlerta] = useState({
     show: false,
     titulo: '',
@@ -42,10 +42,12 @@ export default ({ navigation }) => {
   const [cria, setCria] = useState([]);
   const [iden, setIden] = useState(0);
   const [modal, setModal] = useState(false);
-  const [tratamientoOptions, setTratamientoOptios] = useState([{ value: '', label: '' }]);
+  const [tratamientoOptions, setTratamientoOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [openTipo, setOpenTipo] = useState(false);
+  const [openTrat, setOpenTrat] = useState(false);
 
-  const options = [
+  const [options, setOptions] = useState([
     { value: 'Normal', label: 'NORMAL' },
     { value: 'Dif. Intensa', label: 'DIF. INTENSA' },
     { value: 'Dif. Leve', label: 'DIF. LEVE' },
@@ -53,7 +55,7 @@ export default ({ navigation }) => {
     { value: 'No sabe', label: 'NO SABE' },
     { value: 'Mala Presentación', label: 'MALA PRESENTACION' },
     { value: 'Mellizos', label: 'MELLIZOS' }
-  ];
+  ]);
 
   const sexoOptions = [
     { value: 'Macho', label: 'MACHO' },
@@ -118,20 +120,14 @@ export default ({ navigation }) => {
   }, []);
 
   function obtenerTratamientos() {
-    const filtrado = trata.filter(e => {
-      return (
-        e.tipo == "tratamiento"
-      )
-    });
-    filtrado.map(doc => {
-      let tr = {
-        value: doc.descripcion,
-        label: doc.descripcion
-      }
-
-      setTratamientoOptios(tratamientoOptions => [...tratamientoOptions, tr]);
-    })
+    const filtrado = trata.filter(e => e.tipo === 'tratamiento');
+    const opciones = filtrado.map(doc => ({
+      value: doc.descripcion,
+      label: doc.descripcion
+    }));
+    setTratamientoOptions(opciones);
   }
+
 
   function cerrar() {
     //limpio el form
@@ -145,21 +141,7 @@ export default ({ navigation }) => {
   }
 
   async function getPermisos() {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setPermisos(status === 'granted')
-  }
-
-  async function tomarFoto() {
-    if (!cam) return;
-    const options = { quality: 0.5 };
-    await cam.takePictureAsync({ quality: 0.7, onPictureSaved: onPictureSaved });
-  }
-
-
-  function onPictureSaved(photo) {
-
-    formCria.setFieldValue('foto', photo.uri);
-    setShow(false);
+    setPermisos(true);
   }
 
   function eliminarFoto() {
@@ -192,7 +174,7 @@ export default ({ navigation }) => {
         mensaje: 'Debe ingresar una cría',
         color: '#DD6B55'
       });
-     
+
     } else {
       if (cria.length == 2 && datos.tipo != 'Mellizos') {
         setAlerta({
@@ -270,7 +252,7 @@ export default ({ navigation }) => {
               observaciones: obs,
             }
           }
-          
+
 
           try {
 
@@ -291,7 +273,7 @@ export default ({ navigation }) => {
               peso: c.peso,
               trat: c.trat,
               foto: nombreFoto,
-              observaciones: obs,
+              obs: obs,
             });
 
             //insertar cria en base de datos
@@ -344,15 +326,15 @@ export default ({ navigation }) => {
             let objIndex = movies.findIndex((obj => obj.id == animal.id));
             const copia = [...movies]
             const obj = copia[objIndex]
-            const nuevo = Object.assign({},obj, an)
-            copia[objIndex]=nuevo
+            const nuevo = Object.assign({}, obj, an)
+            copia[objIndex] = nuevo
             setMovies(copia)
             firebase.db.collection('animal').doc(animal.id).update(an);
             firebase.db.collection('animal').doc(animal.id).collection('eventos').add({
               fecha: fecha,
               tipo: 'Parto',
               detalle: detalle,
-              crias: crias, 
+              crias: crias,
               usuario: usuario
             })
             setAlerta({
@@ -388,7 +370,7 @@ export default ({ navigation }) => {
       rp: datos.rp,
       peso: datos.peso,
       sexo: datos.sexo,
-      trat: datos.tratamiento,
+      tratamiento: datos.tratamiento,
       foto: datos.foto,
       obs: datos.obs,
     }
@@ -400,12 +382,12 @@ export default ({ navigation }) => {
     } else {
       base = 'macho'
     }
-    movies.forEach((e)=>{
-    if (c.rp == e.rp && c.rp != "") {
-            errores = true;
-            descerror = 'El RP ' + c.rp + ' ya se encuentra asociado a un animal';
-          }
-        });
+    movies.forEach((e) => {
+      if (c.rp == e.rp && c.rp != "") {
+        errores = true;
+        descerror = 'El RP ' + c.rp + ' ya se encuentra asociado a un animal';
+      }
+    });
     //}
     if (errores) {
       setAlerta({
@@ -431,15 +413,35 @@ export default ({ navigation }) => {
   }
   function cambiarFecha(event, date) {
     const currentDate = date;
-    setShowFecha(false); 
+    setShowFecha(false);
     setFecha(currentDate);
     formParto.handleChange('fecha')
   };
-const handlever = ()=> {
-  setShowFecha(true);
-}
-let texto = format(fecha, 'yyyy-MM-dd');
+  const handlever = () => {
+    setShowFecha(true);
+  }
+  let texto = format(fecha, 'yyyy-MM-dd');
 
+  const containerStyle = { zIndex: 2000 };
+  const containerStyle2 = { zIndex: 1000 };
+  const containerCriaSexo = { zIndex: 2000 };
+  const containerCriaCalostro = { zIndex: 1000 };
+
+  const [openSexo, setOpenSexo] = useState(false);
+  const [valueSexo, setValueSexo] = useState(formCria.values.sexo);
+  const [itemsSexo, setItemsSexo] = useState([
+    { value: 'Macho', label: 'MACHO' },
+    { value: 'Hembra', label: 'HEMBRA' },
+    { value: 'Macho Muerto', label: 'MACHO MUERTO' },
+    { value: 'Hembra Muerta', label: 'HEMBRA MUERTA' },
+  ]);
+
+  const [openCalostro, setOpenCalostro] = useState(false);
+  const [valueCalostro, setValueCalostro] = useState(formCria.values.tratamiento);
+  const [itemsCalostro, setItemsCalostro] = useState([
+    { value: 'Calostro Madre', label: 'CALOSTRO MADRE' },
+    { value: 'Calostro Congelado', label: 'CALOSTRO CONGELADO' },
+  ]);
 
   return (
     <View style={styles.container}>
@@ -450,58 +452,63 @@ let texto = format(fecha, 'yyyy-MM-dd');
         <ScrollView>
           <Text style={styles.texto}>FECHA:</Text>
           <TouchableHighlight style={styles.calendario} onPress={handlever}>
-          <View 
-          
-          ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
+            <View
+
+            ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
           {showfecha && (
-          <DateTimePicker
-            placeholder="Fecha"
-            dateFormat="DD/MM/YYYY"
-            maximumDate={new Date()}
-            showIcon={true}
-            androidMode="spinner"
-            style={styles.fecha}
-            value={fecha}
-            onChange={cambiarFecha}
-            customStyles={{
-              dateInput: {
-                borderColor: 'white',
-                borderRadius: 10,
-                backgroundColor: 'white',
-                borderColor: 'grey',
-                borderWidth: 1,
-              }
-            }}
-          /> )}
-          <View>
+            <DateTimePicker
+              placeholder="Fecha"
+              dateFormat="DD/MM/YYYY"
+              maximumDate={new Date()}
+              showIcon={true}
+              androidMode="spinner"
+              style={styles.fecha}
+              value={fecha}
+              onChange={cambiarFecha}
+              customStyles={{
+                dateInput: {
+                  borderColor: 'white',
+                  borderRadius: 10,
+                  backgroundColor: 'white',
+                  borderColor: 'grey',
+                  borderWidth: 1,
+                }
+              }}
+            />)}
+          <View style={containerStyle}>
             <Text style={styles.texto}>TIPO:</Text>
-
-            <RNPickerSelect
-              items={options}
-              onValueChange={formParto.handleChange('tipo')}
+            <DropDownPicker
+              open={openTipo}
               value={formParto.values.tipo}
-
-              placeholder={{}}
-              style={styles.pickerStyle}
+              items={options}
+              setOpen={setOpenTipo}
+              setItems={setOptions}
+              onChangeValue={value => formParto.setFieldValue('tipo', value)}
+              placeholder="Seleccionar tipo"
+              zIndex={2000}
+              zIndexInverse={1000}
             />
           </View>
-          <View>
+          <View style={containerStyle2}>
             <Text style={styles.texto}>TRATAMIENTO:</Text>
-
-            <RNPickerSelect
-              items={tratamientoOptions}
-              onValueChange={formParto.handleChange('tratamiento')}
+            <DropDownPicker
+              open={openTrat}
               value={formParto.values.tratamiento}
-
-              placeholder={{}}
-              style={styles.pickerStyle}
+                items={tratamientoOptions}
+              setOpen={setOpenTrat}
+              setValue={value => formParto.setFieldValue('tratamiento', value())}
+              setItems={setTratamientoOptions}
+              onChangeValue={value => formParto.setFieldValue('tratamiento', value)}
+              placeholder="Seleccionar tratamiento"
+              zIndex={1000}
+              zIndexInverse={2000}
             />
           </View>
           <View>
             <Text style={styles.texto}>OBSERVACIONES:</Text>
             <TextInput
               style={styles.entrada}
-              onChangeText={formParto.handleChange('obs')}
+              onChangeText={(value) => formParto.setFieldValue('obs', value)}
               value={formParto.values.obs}
             />
           </View>
@@ -589,14 +596,23 @@ let texto = format(fecha, 'yyyy-MM-dd');
 
                   <Text style={styles.texto}>SEXO:</Text>
 
-                  <RNPickerSelect
-                    items={sexoOptions}
-                    onValueChange={formCria.handleChange('sexo')}
-                    value={formCria.values.sexo}
-
-                    placeholder={{}}
-                    style={styles.pickerStyle}
-                  />
+                  <View style={{ zIndex: 2000 }}>
+                    <DropDownPicker
+                      open={openSexo}
+                      value={valueSexo}
+                      items={itemsSexo}
+                      setOpen={setOpenSexo}
+                      setValue={callback => {
+                        const val = callback();
+                        setValueSexo(val);
+                        formCria.setFieldValue('sexo', val);
+                      }}
+                      setItems={setItemsSexo}
+                      placeholder="Seleccionar sexo"
+                      zIndex={2000}
+                      zIndexInverse={1000}
+                    />
+                  </View>
                   <Text style={styles.texto}>RP:</Text>
                   <TextInput
                     style={styles.entrada}
@@ -613,14 +629,23 @@ let texto = format(fecha, 'yyyy-MM-dd');
                   {formCria.errors.peso ? <Text style={styles.error}>{formCria.errors.peso}</Text> : null}
                   <Text style={styles.texto}>CALOSTRO:</Text>
 
-                  <RNPickerSelect
-                    items={calostroOptions}
-                    onValueChange={formCria.handleChange('tratamiento')}
-                    value={formCria.values.tratamiento}
-
-                    placeholder={{}}
-                    style={styles.pickerStyle}
-                  />
+                  <View style={{ zIndex: 1000 }}>
+                    <DropDownPicker
+                      open={openCalostro}
+                      value={valueCalostro}
+                      items={itemsCalostro}
+                      setOpen={setOpenCalostro}
+                      setValue={callback => {
+                        const val = callback();
+                        setValueCalostro(val);
+                        formCria.setFieldValue('tratamiento', val);
+                      }}
+                      setItems={setItemsCalostro}
+                      placeholder="Seleccionar calostro"
+                      zIndex={1000}
+                      zIndexInverse={2000}
+                    />
+                  </View>
                 </View>
                 <View>
                   <Text style={styles.texto}>OBSERVACIONES:</Text>
@@ -693,78 +718,28 @@ let texto = format(fecha, 'yyyy-MM-dd');
           </View>
         }
       </Modal>
-      <Modal
-        animationType='fade'
-        transparent={true}
-        visible={show}
-      >
-        <View style={styles.center}>
-          <View style={styles.content}>
-            <Camera
-              style={styles.camara}
-              type={Camera.Constants.Type.back}
-              ref={ref => (cam = ref)}
-            >
-
-            </Camera>
-            <Text></Text>
-            <View style={styles.columnas}>
-              <View style={styles.colder}>
-                <Button
-                  style={styles.boton}
-                  type="outline"
-                  icon={
-                    <Icon
-                      name="camera"
-                      size={35}
-                      color="#3390FF"
-                    />
-                  }
-                  onPress={() => tomarFoto()}
-                />
-              </View>
-
-              <View style={styles.colder}>
-                <Button
-                  style={styles.boton}
-                  type="outline"
-                  icon={
-                    <Icon
-                      name="window-close"
-                      size={35}
-                      color="#3390FF"
-                    />
-                  }
-                  onPress={() => setShow(false)}
-                />
-              </View>
-            </View>
+      {alerta.show && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => {
+                setAlerta({ ...alerta, show: false });
+                if (alerta.vuelve) {
+                  navigation.popToTop();
+                }
+              }}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
           </View>
-        </View>
-
-      </Modal>
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        cancelText="No, cancel"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => {
-          setAlerta({ show: false })
-        }}
-        onConfirmPressed={() => {
-          setAlerta({ show: false })
-          if (alerta.vuelve == true) {
-            navigation.popToTop();
-          }
-        }}
-      />
+        </Modal>
+      )}
 
     </View >
   );
@@ -824,7 +799,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
 
   },
-  textocalendar:{
+  textocalendar: {
     textAlign: "center"
   },
   calendario: {

@@ -41,15 +41,7 @@ export default ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.listado}>
-        <FlatList
-          ItemSeparatorComponent={() => <Separator />}
-          data={DATA}
-          keyExtractor={(item) => item.id}
-          initialNumToRender={100}
-          renderItem={({ item }) => (
-            <ListItem data={item} navigation={navigation} />
-          )}
-        />
+        <ListItem navigation={navigation} tambo={tambo} />
       </View>
     </View>
   );

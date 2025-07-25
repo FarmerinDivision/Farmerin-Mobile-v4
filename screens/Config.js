@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, FlatList, ActivityIndicator, Image, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, FlatList, ActivityIndicator, Image, Linking, Button } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encode } from 'base-64';
 import SelectTambo from './SelectTambo';
 import { connect } from 'react-redux';
 import { selectTambo } from '../src/reducers/tambo';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 
 const Config = ({ navigation, tambo, selectTambo }) => {
   const [showTambos, setShowTambos] = useState(false);
@@ -17,6 +17,7 @@ const Config = ({ navigation, tambo, selectTambo }) => {
     mensaje: '',
     color: '#DD6B55'
   });
+  const [sesionCerrada, setSesionCerrada] = useState(false);
 
   useEffect(() => {
     if (!global.btoa) {
@@ -93,27 +94,52 @@ const Config = ({ navigation, tambo, selectTambo }) => {
         </>
       )}
       {showTambos && <SelectTambo setShowTambos={setShowTambos} showTambos={showTambos} selectTambo={selectTambo} />}
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={true}
-        showConfirmButton={true}
-        cancelText="CANCELAR"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        cancelButtonColor={'#DD6B55'}
-        onCancelPressed={() => setAlerta({ show: false })}
-        onConfirmPressed={() => {
-          setAlerta({ show: false });
-          AsyncStorage.removeItem('usuario');
-          AsyncStorage.removeItem('nombre');
-          navigation.navigate('OnBoarding');
-        }}
-      />
+      {alerta.show && !sesionCerrada && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => {
+                setSesionCerrada(true);
+                setAlerta({ ...alerta, show: false });
+                AsyncStorage.removeItem('usuario');
+                AsyncStorage.removeItem('nombre');
+                setTimeout(() => {
+                  setSesionCerrada(false);
+                  navigation.navigate('OnBoarding');
+                }, 1500); // 1.5 segundos mostrando el cartel de sesión cerrada
+              }}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
+            <Button
+              title="CANCELAR"
+              onPress={() => setAlerta({ ...alerta, show: false })}
+              buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
+      {sesionCerrada && (
+        <Modal isVisible={sesionCerrada}>
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#4cb050' }}>¡Sesión cerrada!</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => {
+                setSesionCerrada(false);
+                navigation.navigate('OnBoarding');
+              }}
+              buttonStyle={{ backgroundColor: '#4cb050', marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

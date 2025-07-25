@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Button } from 'react-native';
 //import 'expo-firestore-offline-persistence';
 
 
@@ -7,12 +7,12 @@ import firebase from '../../database/firebase';
 import ListItem from './ListItem';
 import { SearchBar } from 'react-native-elements';
 import differenceInDays from 'date-fns/differenceInDays';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
-  const [movies] = useContext(MovieContext);
+  const { movies } = useContext(MovieContext);
   const [animales, guardarAnimales] = useState([]);
   const [animalesFilter, guardarAnimalesFilter] = useState([]);
   const [rp, guardarRP] = useState('');
@@ -102,18 +102,23 @@ export default ({ navigation }) => {
             />
           )
         )}
-        <AwesomeAlert
-          show={alerta.show}
-          title={alerta.titulo}
-          message={alerta.mensaje}
-          closeOnTouchOutside={false}
-          closeOnHardwareBackPress={false}
-          showCancelButton={false}
-          showConfirmButton={true}
-          confirmText="ACEPTAR"
-          confirmButtonColor={alerta.color}
-          onConfirmPressed={() => setAlerta({ show: false })}
-        />
+        {alerta.show && (
+          <Modal
+            isVisible={alerta.show}
+            onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+            onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+          >
+            <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+              <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+              <Button
+                title="ACEPTAR"
+                onPress={() => setAlerta({ ...alerta, show: false })}
+                buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+              />
+            </View>
+          </Modal>
+        )}
       </View>
     </View>
   );

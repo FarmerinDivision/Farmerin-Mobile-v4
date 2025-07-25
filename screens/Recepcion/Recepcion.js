@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 //import 'expo-firestore-offline-persistence';
@@ -144,25 +144,41 @@ export default ({ navigation }) => {
         buttonStyle={styles.button}
       />
   
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => setAlerta({ show: false })}
-        onConfirmPressed={() => setAlerta({ show: false })}
+      <CustomModal
+        visible={alerta.show}
+        titulo={alerta.titulo}
+        mensaje={alerta.mensaje}
+        color={alerta.color}
+        onClose={() => setAlerta({ ...alerta, show: false })}
       />
     </View>
   );
 }
 
 const Separator = () => <View style={styles.separator} />;
+
+// Modal simple para alertas
+const CustomModal = ({ visible, titulo, mensaje, color, onClose }) => (
+  <Modal
+    visible={visible}
+    transparent
+    animationType="fade"
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContent}>
+        <Text style={styles.modalTitle}>{titulo}</Text>
+        <Text style={styles.modalMessage}>{mensaje}</Text>
+        <TouchableOpacity
+          style={[styles.modalButton, { backgroundColor: color || '#1b829b' }]}
+          onPress={onClose}
+        >
+          <Text style={styles.modalButtonText}>ACEPTAR</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -214,5 +230,42 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: 16,
     color: '#1b829b',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 25,
+    alignItems: 'center',
+    minWidth: 250,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#222',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

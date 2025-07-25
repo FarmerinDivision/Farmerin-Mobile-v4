@@ -4,7 +4,7 @@ import { Button } from 'react-native-elements';
 import firebase from '../database/firebase';
 import { useFormik } from 'formik';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons'; // Asegúrate de tener esta importación
 
 const CustomPasswordInput = ({ onChangeText, value }) => {
@@ -37,12 +37,7 @@ const CustomPasswordInput = ({ onChangeText, value }) => {
 
 export default ({ navigation }) => {
   const [loading, setLoading] = useState(false);
-  const [alerta, setAlerta] = useState({
-    show: false,
-    titulo: '',
-    mensaje: '',
-    color: '#DD6B55'
-  });
+  const [alerta, setAlerta] = useState('');
 
   const validate = values => {
     const errors = {};
@@ -76,12 +71,7 @@ export default ({ navigation }) => {
       await AsyncStorage.setItem('nombre', nombreUsuario);
       navigation.navigate('CONFIGURACION');
     } catch (error) {
-      setAlerta({
-        show: true,
-        titulo: '¡ERROR!',
-        mensaje: error.message,
-        color: '#DD6B55'
-      });
+      setAlerta(error.message);
     }
   }
 
@@ -95,12 +85,7 @@ export default ({ navigation }) => {
       await guardarUsuario(res.user.uid, nombre); // Llama a guardarUsuario aquí si es necesario
       navigation.reset('MenuEventos');
     } catch (error) {
-      setAlerta({
-        show: true,
-        titulo: '¡ERROR!',
-        mensaje: error.message,
-        color: '#DD6B55'
-      });
+      setAlerta(error.message);
     } finally {
       setLoading(false);
     }
@@ -147,19 +132,23 @@ export default ({ navigation }) => {
           />
         </View>
       )}
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onConfirmPressed={() => setAlerta({ show: false })}
-      />
+      {alerta && (
+        <Modal
+          isVisible={!!alerta}
+          onBackdropPress={() => setAlerta('')}
+          onBackButtonPress={() => setAlerta('')}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+            <Text style={{ marginVertical: 10 }}>{typeof alerta === 'object' ? alerta.mensaje : alerta}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta('')}
+              buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

@@ -38,7 +38,8 @@ export default function NavEventos() {
                         borderBottomWidth: 1,
                         borderBottomColor: 'white'
                     },
-                    headerTintColor: '#fff'
+                    headerTintColor: '#fff',
+                    headerBackTitle: 'Atrás'
                 }}
             >
                 <Stack.Screen

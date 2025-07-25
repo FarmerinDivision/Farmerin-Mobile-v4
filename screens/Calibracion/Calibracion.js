@@ -3,17 +3,17 @@ import { StyleSheet, Text, View, TextInput, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { encode } from 'base-64'
+import { encode } from 'base-64';
 import { isNaN } from 'formik';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
 
   const route = useRoute();
-  const {tambo} = route.params;
-
+  const { tambo } = route.params;
   const { id, host } = tambo;
+
   const [relAct, setRelAct] = useState(0);
   const [racion, setRacion] = useState(2);
   const [promedio, setPromedio] = useState(0);
@@ -39,56 +39,35 @@ export default ({ navigation }) => {
     obtenerRacion();
   }, []);
 
-  const handleChange = (e) => {
-    e.preventDefault();
-    let p = e.target.value;
-    setPeso(p);
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = () => {
     let m = mediciones;
-    let p = parseInt(peso)
+    let p = parseInt(peso);
     if (isNaN(p)) {
-      setAlerta({
-        show: true,
-        titulo: '¡ ERROR !',
-        mensaje: 'INGRESE UN NUMERO',
-        color: '#DD6B55'
-      });
+      setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'INGRESE UN NUMERO', color: '#DD6B55' });
     } else {
       if (p > 0) {
-
         if (m < 5) {
           m++;
           let acum = acumulado + p;
           let prom = acum / m;
-          let rel = (prom * relAct) / (racion*1000);
+          let rel = (prom * relAct) / (racion * 1000);
           setMediciones(m);
           setAcumulado(acum);
           setPromedio(prom);
           setRelacion(rel);
           setPeso("");
-          e.preventDefault();
         }
       } else {
-        setAlerta({
-          show: true,
-          titulo: '¡ ERROR !',
-          mensaje: 'EL PESO DEBE SER MAYOR A CERO',
-          color: '#DD6B55'
-        });
-
+        setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'EL PESO DEBE SER MAYOR A CERO', color: '#DD6B55' });
       }
     }
-  }
+  };
 
   async function obtenerRelacion() {
-
     const url = 'http://' + host + '/relacion';
     const login = 'farmerin';
     const password = 'Farmerin*2021';
     try {
-
       const api = await fetch(url, {
         headers: {
           'Authorization': 'Basic ' + btoa(`${login}:${password}`),
@@ -98,29 +77,18 @@ export default ({ navigation }) => {
       });
       const r = await api.json();
       const rel = r[0].relacion;
-      if (isNaN(parseFloat(rel))) {
-        setRelAct(0);
-      } else {
-        setRelAct(parseFloat(rel));
-      }
+      setRelAct(isNaN(parseFloat(rel)) ? 0 : parseFloat(rel));
     } catch (error) {
       setRelAct(0);
-      setAlerta({
-        show: true,
-        titulo: '¡ ERROR !',
-        mensaje: 'NO SE PUEDE CONECTAR AL TAMBO '+error,
-        color: '#DD6B55'
-      });
+      setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'NO SE PUEDE CONECTAR AL TAMBO ' + error, color: '#DD6B55' });
     }
-  };
+  }
 
   async function obtenerRacion() {
-
     const url = 'http://' + host + '/racion';
     const login = 'farmerin';
     const password = 'Farmerin*2021';
     try {
-
       const api = await fetch(url, {
         headers: {
           'Authorization': 'Basic ' + btoa(`${login}:${password}`),
@@ -130,29 +98,18 @@ export default ({ navigation }) => {
       });
       const r = await api.json();
       const rac = r[0].racion;
-      if (isNaN(parseFloat(rac))) {
-        setRacion(2);
-      } else {
-        setRacion(parseFloat(rac));
-      }
+      setRacion(isNaN(parseFloat(rac)) ? 2 : parseFloat(rac));
     } catch (error) {
       setRacion(2);
-      setAlerta({
-        show: true,
-        titulo: '¡ ERROR !',
-        mensaje: 'NO SE PUEDE OBTENER RACIÓN DE CALIBRACION '+error,
-        color: '#DD6B55'
-      });
+      setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'NO SE PUEDE OBTENER RACIÓN DE CALIBRACION ' + error, color: '#DD6B55' });
     }
-  };
+  }
 
   async function moverMotor() {
-
-    const url = 'http://' + host + '/moverMotor/1&1&'+racion;
+    const url = 'http://' + host + '/moverMotor/1&1&' + racion;
     const login = 'farmerin';
     const password = 'Farmerin*2021';
     try {
-
       const api = await fetch(url, {
         headers: {
           'Authorization': 'Basic ' + btoa(`${login}:${password}`),
@@ -161,32 +118,18 @@ export default ({ navigation }) => {
         }
       });
       const t = await api.json();
-      setAlerta({
-        show: true,
-        titulo: '¡ATENCION!',
-        mensaje: t[0].mensaje,
-        color: '#3AD577'
-      });
-
+      setAlerta({ show: true, titulo: '¡ATENCION!', mensaje: t[0].mensaje, color: '#3AD577' });
     } catch (error) {
-      setAlerta({
-        show: true,
-        titulo: '¡ ERROR !',
-        mensaje: 'NO SE PUEDE CONECTAR AL TAMBO',
-        color: '#DD6B55'
-      });
+      setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'NO SE PUEDE CONECTAR AL TAMBO', color: '#DD6B55' });
     }
-  };
-
+  }
 
   async function finalizar() {
-
     if (relacion > 0) {
       const url = 'http://' + host + '/setRelacion/' + relacion;
       const login = 'farmerin';
       const password = 'Farmerin*2021';
       try {
-
         const api = await fetch(url, {
           headers: {
             'Authorization': 'Basic ' + btoa(`${login}:${password}`),
@@ -195,62 +138,36 @@ export default ({ navigation }) => {
           }
         });
         const t = await api.json();
-        setAlerta({
-          show: true,
-          titulo: '¡ATENCION!',
-          mensaje: t[0].mensaje,
-          color: '#3AD577'
-        });
+        setAlerta({ show: true, titulo: '¡ATENCION!', mensaje: t[0].mensaje, color: '#3AD577' });
         setRelAct(relacion);
       } catch (error) {
-        setAlerta({
-          show: true,
-          titulo: '¡ ERROR !',
-          mensaje: 'NO SE PUDO MODIFICAR LA RELACIÓN',
-          color: '#DD6B55'
-        });
+        setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'NO SE PUDO MODIFICAR LA RELACIÓN', color: '#DD6B55' });
       }
-
-
-      //inicializa parametros
       setMediciones(0);
       setRelacion(0);
       setAcumulado(0);
       setPromedio(0);
       setPeso("0");
       setIniciar(true);
-
     } else {
-      setAlerta({
-        show: true,
-        titulo: '¡ ERROR !',
-        mensaje: 'LA RELACIÓN DEBE SER MAYOR A CERO',
-        color: '#DD6B55'
-      });
+      setAlerta({ show: true, titulo: '¡ ERROR !', mensaje: 'LA RELACIÓN DEBE SER MAYOR A CERO', color: '#DD6B55' });
     }
-
   }
 
   return (
     <View style={styles.container}>
       {relAct === 0 ? (
-        <Text style={styles.alerta}>
-          NO SE PUEDE OBTENER LA RELACION PASO/GRAMOS ACTUAL
-        </Text>
+        <Text style={styles.alerta}>NO SE PUEDE OBTENER LA RELACION PASO/GRAMOS ACTUAL</Text>
       ) : (
         <ScrollView>
           <Text style={styles.texto}>1 - PRESIONE "INICIAR"</Text>
           <Text style={styles.texto}>2 - DESCARGUE MOTOR 1 PARA PESAR</Text>
           <Text style={styles.texto}>3 - INTRODUZCA LOS GRAMOS PESADOS Y PRESIONE "+"</Text>
-          <Text style={styles.texto}>
-            4 - REPETIR DESDE EL PUNTO 2 TANTAS VECES COMO VEA NECESARIO (SE TOMAN SOLO 5 MUESTRAS).
-          </Text>
+          <Text style={styles.texto}>4 - REPETIR DESDE EL PUNTO 2 TANTAS VECES COMO VEA NECESARIO (SE TOMAN SOLO 5 MUESTRAS).</Text>
           <Text style={styles.texto}>5 - PRESIONE FINALIZAR</Text>
           <Text style={styles.textoA}>¡ATENCION!</Text>
-          <Text style={styles.textoB}>
-            SE HARÁ LA DESCARGA EN MOTOR 1 - LADO IZQUIERDO
-          </Text>
-  
+          <Text style={styles.textoB}>SE HARÁ LA DESCARGA EN MOTOR 1 - LADO IZQUIERDO</Text>
+
           {iniciar ? (
             <Button
               style={styles.boton}
@@ -274,8 +191,6 @@ export default ({ navigation }) => {
                     onChangeText={(t) => setPeso(t)}
                     value={peso}
                     keyboardType="numeric"
-                    min="0"
-                    required
                   />
                   <Button
                     style={styles.boton}
@@ -289,7 +204,6 @@ export default ({ navigation }) => {
                 <Text style={styles.texto}>NUEVA RELACION GR/P: {relacion}</Text>
                 <Text style={styles.texto}>RELACION ACTUAL GR/P: {relAct}</Text>
               </View>
-  
               <Button
                 style={styles.boton}
                 title="FINALIZAR"
@@ -300,23 +214,30 @@ export default ({ navigation }) => {
           )}
         </ScrollView>
       )}
-  
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onConfirmPressed={() => setAlerta({ show: false })}
-      />
+
+      <Modal
+        isVisible={alerta.show}
+        backdropOpacity={0.5}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        useNativeDriver
+        hideModalContentWhileAnimating
+        onBackdropPress={() => {}}
+        onBackButtonPress={() => {}}
+      >
+        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+          <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color, textAlign: 'center' }}>{alerta.titulo}</Text>
+          <Text style={{ marginVertical: 15, fontSize: 16, textAlign: 'center' }}>{alerta.mensaje}</Text>
+          <Button
+            title="ACEPTAR"
+            onPress={() => setAlerta({ show: false })}
+            buttonStyle={{ backgroundColor: alerta.color, borderRadius: 8 }}
+          />
+        </View>
+      </Modal>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

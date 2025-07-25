@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { format } from 'date-fns'
 import { Button } from 'react-native-elements';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function ListItem({ data,eliminarProduccion, info}) {
@@ -42,25 +42,23 @@ export default function ListItem({ data,eliminarProduccion, info}) {
       </View>
     </TouchableOpacity>
 
-    <AwesomeAlert
-      show={alerta}
-      showProgress={false}
-      title="¡ATENCIÓN!"
-      message="¿DESEA ELIMINAR ESTA PRODUCCIÓN?"
-      closeOnTouchOutside={false}
-      closeOnHardwareBackPress={false}
-      showCancelButton={true}
-      showConfirmButton={true}
-      cancelText="CANCELAR"
-      confirmText="ACEPTAR"
-      confirmButtonColor="#3AD577"
-      cancelButtonColor="#DD6B55"
-      onCancelPressed={() => setAlerta(false)}
-      onConfirmPressed={() => {
-        setAlerta(false);
-        eliminarProduccion();
-      }}
-    />
+    {alerta && (
+      <Modal
+        isVisible={!!alerta}
+        onBackdropPress={() => setAlerta(false)}
+        onBackButtonPress={() => setAlerta(false)}
+      >
+        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+          <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+          <Text style={{ marginVertical: 10 }}>{alerta}</Text>
+          <Button
+            title="ACEPTAR"
+            onPress={() => setAlerta(false)}
+            buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+          />
+        </View>
+      </Modal>
+    )}
   </>
 );
 }

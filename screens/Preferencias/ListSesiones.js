@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableHighlight  } from 'react-native';
 import { getAuth, deleteUser } from "firebase/auth";
-import AwesomeAlert from 'react-native-awesome-alerts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ListSesiones({data}) {

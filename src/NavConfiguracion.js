@@ -1,4 +1,3 @@
-import { NavigationContainer } from '@react-navigation/native'; // Agregar NavigationContainer
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; // Asegúrate de que esta importación sea correcta
 import ConfigScreen from '../screens/Config';
 import ErpScreen from '../screens/Erp/Erp';
@@ -30,7 +29,8 @@ export default function NavConfiguracion() {
                         borderBottomWidth: 1,
                         borderBottomColor: 'white'
                     },
-                    headerTintColor: '#fff'
+                    headerTintColor: '#fff',
+                    headerBackTitle: 'Atrás'
                 }}
             >
                 <Stack.Screen

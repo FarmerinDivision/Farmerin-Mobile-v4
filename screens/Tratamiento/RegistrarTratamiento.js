@@ -1,34 +1,30 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, TextInput, ScrollView, TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, TextInput, ScrollView, TouchableHighlight, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-//import 'expo-firestore-offline-persistence';
-
-
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import firebase from '../../database/firebase';
-import RNPickerSelect from 'react-native-picker-select';
+import DropDownPicker from 'react-native-dropdown-picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { format } from 'date-fns';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
-
-
 
 export default ({ navigation }) => {
   const [show, setShow] = useState(false);
   const [fecha, setFecha] = useState(new Date());
 
   const routeTratam = useRoute();
-  const {animal} = routeTratam.params;
-  const {usuario} = routeTratam.params;
-  const {tratam} = routeTratam.params;
+  const { animal, usuario, tratam } = routeTratam.params;
 
-  const [tratamientos, setTratamientos] = useState([{ value: '', label: '' }]);
-  const [enfermedad, setEnfermedad] = useState([{ value: '', label: '' }]);
+  const [itemsTrat, setItemsTrat] = useState([]);
+  const [itemsEnf, setItemsEnf] = useState([]);
+  const [openTrat, setOpenTrat] = useState(false);
+  const [openEnf, setOpenEnf] = useState(false);
+
   const [alerta, setAlerta] = useState({
     show: false,
     titulo: '',
@@ -38,39 +34,31 @@ export default ({ navigation }) => {
   });
 
   useEffect(() => {
-    //busca los tratamientos
-    obtenerTratamientos();
-
+    const enf = [];
+    const trat = [];
+    tratam.map(doc => {
+      let item = { label: doc.descripcion, value: doc.descripcion };
+      if (doc.tipo === 'tratamiento') {
+        trat.push(item);
+      } else if (doc.tipo === 'enfermedad') {
+        enf.push(item);
+      }
+    });
+    setItemsTrat(trat);
+    setItemsEnf(enf);
   }, []);
 
-  function obtenerTratamientos() {
-    tratam.map(doc => {
-      let tr = {
-        key: doc.descripcion,
-        value: doc.descripcion,
-        label: doc.descripcion
-      }
-
-      if (doc.tipo == 'tratamiento') {
-        setTratamientos(tratamientos => [...tratamientos, tr]);
-      } else if (doc.tipo == 'enfermedad'){
-        setEnfermedad(enfermedad => [...enfermedad, tr]);
-      }
-    })
-  }
-
   const validate = values => {
-    const errors = {}
-    if (values.tratamiento == '') {
-      errors.tratamiento = "DEBE SELECCIONAR UN TRATAMIENTO"
+    const errors = {};
+    if (!values.tratamiento) {
+      errors.tratamiento = "DEBE SELECCIONAR UN TRATAMIENTO";
     }
-    if (values.enfermedad == '') {
-      errors.enfermedad = "DEBE SELECCIONAR UNA ENFERMEDAD"
+    if (!values.enfermedad) {
+      errors.enfermedad = "DEBE SELECCIONAR UNA ENFERMEDAD";
     }
-    return errors
-  }
+    return errors;
+  };
 
-  //La funcion validate debe estar declarada antes del form sino no funciona
   const formTratamiento = useFormik({
     initialValues: {
       fecha: fecha,
@@ -82,46 +70,24 @@ export default ({ navigation }) => {
     onSubmit: datos => guardar(datos)
   });
 
-
-
-
   function guardar(datos) {
-
-    //Formatea fecha 
-    const tipof = typeof datos.fecha;
-    let fstring;
-    let fdate;
-    if (tipof == 'string') {
-      let parts = datos.fecha.split('/');
-      fstring = (parts[2]) + '-' + (parts[1]) + '-' + parts[0];
-      let fs = fstring + 'T04:00:00';
-      fdate = new Date(fs);
-    } else {
-      fstring = format(fecha, 'yyyy-MM-dd');
-      fdate = datos.fecha;
-      console.log('ESTO TIRO', fdate)
-
-    }
-
+    let fstring = format(fecha, 'yyyy-MM-dd');
+    let fdate = fecha;
     let detalle = 'Enfermedad: ' + datos.enfermedad + ' /Tratamiento: ' + datos.tratamiento + ' /Obs: ' + datos.obs;
     try {
-
       firebase.db.collection('animal').doc(animal.id).collection('eventos').add({
-        fecha: fecha,
+        fecha: fdate,
         tipo: 'Tratamiento',
         detalle: detalle,
         usuario: usuario
-      
-      })
+      });
       setAlerta({
         show: true,
         titulo: '¡ATENCION!',
         mensaje: 'TRATAMIENTO REGISTRADO CON ÉXITO',
         color: '#3AD577',
-        vuelve: true,
+        vuelve: true
       });
-      console.log('EXITO', detalle)
-
     } catch (error) {
       setAlerta({
         show: true,
@@ -129,142 +95,109 @@ export default ({ navigation }) => {
         mensaje: 'NO SE PUEDE REGISTRAR EL TRATAMIENTO',
         color: '#DD6B55'
       });
-      console.log('ERROR', error)
     }
-
-
-
   }
 
   function cambiarFecha(event, date) {
     const currentDate = date;
-    setShow(false); 
+    setShow(false);
     setFecha(currentDate);
-    formTratamiento.handleChange('fecha')
-  };
-const handlever = ()=> {
-  setShow(true);
-}
-console.log('TRATAM', formTratamiento)
-let texto = format(fecha, 'yyyy-MM-dd');
+    formTratamiento.setFieldValue('fecha', currentDate);
+  }
 
-return (
-  <View style={styles.container}>
-    <InfoAnimal
-      animal={animal}
-    />
+  const handlever = () => setShow(true);
 
-    <View style={styles.form}>
-      <ScrollView>
-        <Text style={styles.texto}>FECHA:</Text>
-        <TouchableHighlight style={styles.calendario} onPress={handlever}>
-        <View 
-        
-        ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
-        {show && (
-        <DateTimePicker
-          placeholder="Fecha"
-          dateFormat="DD/MM/YYYY"
-          maximumDate={new Date()}
-          showIcon={true}
-          androidMode="spinner"
-          style={styles.fecha}
-          value={fecha}
-          onChange={cambiarFecha}
-          customStyles={{
-            dateInput: {
-              borderColor: 'grey',
-              borderWidth: 1,
-              borderRadius: 10,
-              backgroundColor: 'white'
-            }
-          }}
-        /> )}
-        <View>
-          <Text style={styles.texto}>ENFERMEDAD:</Text>
-     
-          <RNPickerSelect
-              items={enfermedad}
-              onValueChange={formTratamiento.handleChange('enfermedad')}
+  let texto = format(fecha, 'yyyy-MM-dd');
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <InfoAnimal animal={animal} />
+
+        <View style={styles.form}>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <Text style={styles.texto}>FECHA:</Text>
+            <TouchableHighlight style={styles.calendario} onPress={handlever}>
+              <View><Text style={styles.textocalendar}>{texto}</Text></View>
+            </TouchableHighlight>
+            {show && (
+              <DateTimePicker
+                value={fecha}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                onChange={cambiarFecha}
+                style={styles.fecha}
+              />
+            )}
+
+            <Text style={styles.texto}>ENFERMEDAD:</Text>
+            <DropDownPicker
+              open={openEnf}
               value={formTratamiento.values.enfermedad}
-
-              placeholder={{
-                label: 'SELECCIONAR ENFERMEDAD',
-                value: null,
-                color: '#9EA0A4',
-              }}
-              style={styles.pickerStyle}
+              items={itemsEnf}
+              setOpen={setOpenEnf}
+              setValue={(callback) => formTratamiento.setFieldValue('enfermedad', callback())}
+              setItems={setItemsEnf}
+              placeholder="SELECCIONAR ENFERMEDAD"
+              zIndex={3000}
+              style={{ marginBottom: 20 }}
             />
+            {formTratamiento.errors.enfermedad ? <Text style={styles.error}>{formTratamiento.errors.enfermedad}</Text> : null}
 
-          {formTratamiento.errors.enfermedad ? <Text style={styles.error}>{formTratamiento.errors.enfermedad}</Text> : null}
-        </View>
-        <View>
-          <Text style={styles.texto}>TRATAMIENTO:</Text>
-      
-          <RNPickerSelect
-              items={tratamientos}
-              onValueChange={formTratamiento.handleChange('tratamiento')}
+            <Text style={styles.texto}>TRATAMIENTO:</Text>
+            <DropDownPicker
+              open={openTrat}
               value={formTratamiento.values.tratamiento}
-
-              placeholder={{
-                label: 'SELECCIONAR TRATAMIENTO',
-                value: null,
-                color: '#9EA0A4',
-              }}
-              style={styles.pickerStyle}
+              items={itemsTrat}
+              setOpen={setOpenTrat}
+              setValue={(callback) => formTratamiento.setFieldValue('tratamiento', callback())}
+              setItems={setItemsTrat}
+              placeholder="SELECCIONAR TRATAMIENTO"
+              zIndex={2000}
+              style={{ marginBottom: 20 }}
             />
+            {formTratamiento.errors.tratamiento ? <Text style={styles.error}>{formTratamiento.errors.tratamiento}</Text> : null}
 
-          {formTratamiento.errors.tratamiento ? <Text style={styles.error}>{formTratamiento.errors.tratamiento}</Text> : null}
+            <Text style={styles.texto}>OBSERVACIONES:</Text>
+            <TextInput
+              style={styles.entrada}
+              onChangeText={formTratamiento.handleChange('obs')}
+              value={formTratamiento.values.obs}
+            />
+          </ScrollView>
         </View>
-        <View>
-          <Text style={styles.texto}>OBSERVACIONES:</Text>
-          <TextInput
-            style={styles.entrada}
-            onChangeText={formTratamiento.handleChange('obs')}
-            value={formTratamiento.values.obs}
-          />
 
-        </View>
-      </ScrollView>
-    </View>
-    <Button
-      title="  ACEPTAR"
-      icon={
-        <Icon
-          name="check-square"
-          size={35}
-          color="white"
+        <Button
+          title="  ACEPTAR"
+          icon={<Icon name="check-square" size={35} color="white" />}
+          onPress={formTratamiento.handleSubmit}
         />
-      }
-      onPress={formTratamiento.handleSubmit}
-    />
-    <AwesomeAlert
-      show={alerta.show}
-      showProgress={false}
-      title={alerta.titulo}
-      message={alerta.mensaje}
-      closeOnTouchOutside={false}
-      closeOnHardwareBackPress={false}
-      showCancelButton={false}
-      showConfirmButton={true}
-      cancelText="No, cancelar"
-      confirmText="ACEPTAR"
-      confirmButtonColor={alerta.color}
-      onCancelPressed={() => {
-        setAlerta({ show: false })
-      }}
-      onConfirmPressed={() => {
-        setAlerta({ show: false })
-        if (alerta.vuelve == true) {
-          navigation.popToTop();
-        }
-      }}
-    />
-  </View >
-);
-}
 
-
+        {alerta.show && (
+          <Modal
+            isVisible={alerta.show}
+            onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+            onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+          >
+            <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+              <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+              <Button
+                title="ACEPTAR"
+                onPress={() => {
+                  setAlerta({ ...alerta, show: false });
+                  if (alerta.vuelve) navigation.popToTop();
+                }}
+                buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+              />
+            </View>
+          </Modal>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -282,31 +215,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     marginHorizontal: 10,
-
   },
   fecha: {
     width: wp('100%'),
     padding: 5,
     height: 50
   },
-  lista: {
-    marginLeft: 5,
-    marginRight: 5,
-    borderRadius: 10,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: 'grey',
-    height: 50
-
-  },
   texto: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 5,
-
   },
-  textocalendar:{
+  textocalendar: {
     textAlign: "center"
   },
   calendario: {
@@ -319,12 +240,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 10,
   },
-  header: {
-    marginLeft: 10,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#399dad'
-  },
   error: {
     marginLeft: 5,
     marginRight: 5,
@@ -335,9 +250,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     borderWidth: 1,
     borderColor: 'red'
-
   },
-
   entrada: {
     borderRadius: 8,
     backgroundColor: '#f9f9f9',
@@ -346,51 +259,4 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     height: 50,
   },
-  boton: {
-    margin: 5
-  },
-
-  pickerStyle: {
-    inputIOS: {
-      backgroundColor: '#ffffff',
-      borderRadius: 12,
-      height: 50,
-      borderColor: '#d0d0d0',
-      borderWidth: 1,
-      paddingHorizontal: 15,
-      color: '#333',
-      fontSize: 16,
-      marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 3,
-    },
-    inputAndroid: {
-      backgroundColor: '#ffffff',
-      borderRadius: 12,
-      height: 50,
-      borderColor: '#d0d0d0',
-      borderWidth: 1,
-      paddingHorizontal: 15,
-      color: '#333',
-      fontSize: 16,
-      marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 3,
-    },
-    placeholder: {
-      color: '#9EA0A4',
-    },
-    iconContainer: {
-      top: 10,
-      right: 10,
-    },
-  },
-
-
 });

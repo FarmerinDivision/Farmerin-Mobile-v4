@@ -10,11 +10,11 @@ import differenceInDays from 'date-fns/differenceInDays';
 import { MovieContext } from "../Contexto";
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
-  const [movies, setMovies] = useContext(MovieContext);
+  const { movies, setMovies } = useContext(MovieContext);
   const [animales, guardarAnimales] = useState([]);
   const [animalesFilter, guardarAnimalesFilter] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -171,24 +171,23 @@ export default ({ navigation }) => {
           />
         </>
       )}
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onConfirmPressed={() => {
-          setAlerta({ show: false });
-          if (alerta.vuelve) {
-            navigation.popToTop();
-          }
-        }}
-      />
+      {alerta.show && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta({ ...alerta, show: false })}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

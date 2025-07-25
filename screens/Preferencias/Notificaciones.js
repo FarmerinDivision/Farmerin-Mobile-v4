@@ -6,8 +6,7 @@ import firebase from '../../database/firebase';
 import { Input } from "react-native-elements";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import axios from 'axios';
-import AwesomeAlert from 'react-native-awesome-alerts';
-
+import Modal from 'react-native-modal';
 
 
 export default ({ navigation }) => {
@@ -52,33 +51,28 @@ export default ({ navigation }) => {
                 </Text>
             </View>
             </TouchableHighlight>
-            <AwesomeAlert
-        show={alerta}
-        showProgress={false}
-        title="¡ATENCION!"
-        message="¿ENVIAR ALERTA?"
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={true}
-        showConfirmButton={true}
-        cancelText="CANCELAR"
-        confirmText="ACEPTAR"
-        titleStyle={{ color: "red", fontSize: 26 }}
-        messageStyle={{ fontWeight: "bold", fontSize: 18 }}
-        cancelButtonStyle={{ width: 120 }}
-        confirmButtonStyle={{ width: 120 }}
-        cancelButtonTextStyle={{ textAlign: "center", fontSize: 16 }}
-        confirmButtonTextStyle={{ textAlign: "center", fontSize: 16 }}
-        confirmButtonColor="green"
-        cancelButtonColor='#c4c4c4'
-        onCancelPressed={() => {
-          setAlerta(false)
-        }}
-        onConfirmPressed={() => {
-          setAlerta(false)
-            sendN()
-        }}
+            {alerta && (
+  <Modal
+    isVisible={!!alerta}
+    onBackdropPress={() => setAlerta(false)}
+    onBackButtonPress={() => setAlerta(false)}
+  >
+    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+      <Text style={{ marginVertical: 10 }}>¿DESEA ELIMINAR LA CUENTA?</Text>
+      <Button
+        title="ACEPTAR"
+        onPress={() => setAlerta(false)}
+        buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
       />
+      <Button
+        title="CANCELAR"
+        onPress={() => setAlerta(false)}
+        buttonStyle={{ backgroundColor: '#c4c4c4', marginTop: 10 }}
+      />
+    </View>
+  </Modal>
+)}
         </View>
         
     );

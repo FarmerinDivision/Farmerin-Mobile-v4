@@ -11,7 +11,7 @@ import Config from './src/NavConfiguracion';
 import OnBoardingNavigator from './src/NavSesiones';
 import AuthLoading from './src/AuthLoading';
 import { MovieProvider } from './screens/Contexto';
-import registerNNPushToken from 'native-notify';
+//import registerNNPushToken from 'native-notify';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -85,7 +85,7 @@ const BaseStack = () => (
 );
 
 export default function App() {
-  registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
+// registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

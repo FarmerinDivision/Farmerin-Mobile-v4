@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Button } from 'react-native-elements';
-import AwesomeAlert from 'react-native-awesome-alerts';
 import firebase from '../../database/firebase'; // Asegúrate de importar tu configuración de Firebase
 
 export default function ListItem({ data, host, racionMotor, tambo }) {
@@ -156,19 +155,25 @@ export default function ListItem({ data, host, racionMotor, tambo }) {
         </Text>
       }
 
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onConfirmPressed={() => setAlerta({ show: false })}
-      />
+      <Modal
+        visible={alerta.show}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAlerta({ ...alerta, show: false })}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{alerta.titulo}</Text>
+            <Text style={styles.modalMessage}>{alerta.mensaje}</Text>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: alerta.color || '#1b829b' }]}
+              onPress={() => setAlerta({ ...alerta, show: false })}
+            >
+              <Text style={styles.modalButtonText}>ACEPTAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -219,5 +224,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     textAlign: 'center',
     textAlignVertical: 'center'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 25,
+    alignItems: 'center',
+    minWidth: 250,
+    elevation: 5,
+    width: 300,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#222',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });

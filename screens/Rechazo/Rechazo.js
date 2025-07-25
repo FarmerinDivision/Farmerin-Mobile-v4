@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Button } from 'react-native';
 //import 'expo-firestore-offline-persistence';
 
 
 import firebase from '../../database/firebase';
 import ListItem from './ListItem';
 import { SearchBar } from 'react-native-elements';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
-  const [movies] = useContext(MovieContext);
+  const { movies } = useContext(MovieContext);
 
   const [animales, guardarAnimales] = useState([]);
   const [animalesFilter, guardarAnimalesFilter] = useState([]);
@@ -23,12 +23,7 @@ export default ({ navigation }) => {
   const { usuario } = route.params;
 
   const [loading, setLoading] = useState(true);
-  const [alerta, setAlerta] = useState({
-    show: false,
-    titulo: '',
-    mensaje: '',
-    color: '#DD6B55'
-  });
+  const [alerta, setAlerta] = useState('');
 
   useEffect(() => {
     obtenerAnim();
@@ -64,20 +59,10 @@ export default ({ navigation }) => {
         .get()
         .then(snapshotAnimal)
         .catch(error => {
-          setAlerta({
-            show: true,
-            titulo: '¡ERROR!',
-            mensaje: 'NO SE PUEDEN OBTENER LOS ANIMALES',
-            color: '#DD6B55'
-          });
+          setAlerta('¡ERROR! NO SE PUEDEN OBTENER LOS ANIMALES');
         });
     } catch (error) {
-      setAlerta({
-        show: true,
-        titulo: '¡ERROR!',
-        mensaje: 'NO SE PUEDEN OBTENER LOS ANIMALES',
-        color: '#DD6B55'
-      });
+      setAlerta('¡ERROR! NO SE PUEDEN OBTENER LOS ANIMALES');
     }
   }
 
@@ -142,25 +127,23 @@ export default ({ navigation }) => {
           />
       )}
       </View>
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        cancelText="No, cancelar"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => {
-          setAlerta({ show: false })
-        }}
-        onConfirmPressed={() => {
-          setAlerta({ show: false })
-        }}
-      />
+      {alerta && (
+        <Modal
+          isVisible={!!alerta}
+          onBackdropPress={() => setAlerta('')}
+          onBackButtonPress={() => setAlerta('')}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta('')}
+              buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ActivityIndicator, View, Text, FlatList, Modal, TouchableOpacity } from 'react-native';
+import { StyleSheet, ActivityIndicator, View, Text, FlatList,  TouchableOpacity, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firebase from '../database/firebase';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import ListItem from './ListItem';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 
 export default function App({ setShowTambos, showTambos, selectTambo }) {
   const [tambos, guardarTambos] = useState([]);
@@ -134,25 +134,28 @@ export default function App({ setShowTambos, showTambos, selectTambo }) {
         </View>
 
       </Modal>
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        cancelText="No, cancel"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => {
-          setAlerta({ show: false })
-        }}
-        onConfirmPressed={() => {
-          setAlerta({ show: false })
-        }}
+      {alerta && (
+  <Modal
+    isVisible={!!alerta}
+    onBackdropPress={() => setAlerta(false)}
+    onBackButtonPress={() => setAlerta(false)}
+  >
+    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+      <Text style={{ marginVertical: 10 }}>¿DESEA ELIMINAR LA CUENTA?</Text>
+      <Button
+        title="ACEPTAR"
+        onPress={() => setAlerta(false)}
+        buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
       />
+      <Button
+        title="CANCELAR"
+        onPress={() => setAlerta(false)}
+        buttonStyle={{ backgroundColor: '#c4c4c4', marginTop: 10 }}
+      />
+    </View>
+  </Modal>
+)}
     </>
 
   );

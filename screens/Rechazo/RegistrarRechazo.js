@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput,TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableHighlight } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
@@ -11,17 +11,20 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { format } from 'date-fns';
-import AwesomeAlert from 'react-native-awesome-alerts';
-import RNPickerSelect from 'react-native-picker-select';
+import Modal from 'react-native-modal';
+import DropDownPicker from 'react-native-dropdown-picker';
+
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
   const [show, setShow] = useState(false);
   const [fecha, setFecha] = useState(new Date());
+  const [openMotivo, setOpenMotivo] = useState(false);
+  const [selectedMotivo, setSelectedMotivo] = useState('Infertil');
 
   const route = useRoute();
-  const {animal} = route.params;
-  const {usuario} = route.params;
+  const { animal } = route.params;
+  const { usuario } = route.params;
 
   const options = [
     { value: 'Infertil', label: 'INFERTIL' },
@@ -61,7 +64,6 @@ export default ({ navigation }) => {
     validate,
     onSubmit: datos => guardar(datos)
   });
-
 
 
 
@@ -116,14 +118,14 @@ export default ({ navigation }) => {
 
   function cambiarFecha(event, date) {
     const currentDate = date;
-    setShow(false); 
+    setShow(false);
     setFecha(currentDate);
     formRechazo.handleChange('fecha')
   };
-const handlever = ()=> {
-  setShow(true);
-}
-let texto = format(fecha, 'yyyy-MM-dd');
+  const handlever = () => {
+    setShow(true);
+  }
+  let texto = format(fecha, 'yyyy-MM-dd');
 
   return (
     <View style={styles.container}>
@@ -133,43 +135,47 @@ let texto = format(fecha, 'yyyy-MM-dd');
       <View style={styles.form}>
         <Text style={styles.texto}>FECHA:</Text>
         <TouchableHighlight style={styles.calendario} onPress={handlever}>
-          <View 
-          
+          <View
+
           ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
         {show && (
-        <DateTimePicker
-          placeholder="Fecha"
-          dateFormat="DD/MM/YYYY"
-          maximumDate={new Date()}
-          showIcon={true}
-          androidMode="spinner"
-          style={styles.fecha}
-          value={fecha}
-          onChange={cambiarFecha}
-          customStyles={{
-            dateInput: {
-              borderColor: 'grey',
-              borderWidth: 1,
-              borderRadius: 10,
-              backgroundColor: 'white'
-            }
-          }} 
-        /> )}
+          <DateTimePicker
+            placeholder="Fecha"
+            dateFormat="DD/MM/YYYY"
+            maximumDate={new Date()}
+            showIcon={true}
+            androidMode="spinner"
+            style={styles.fecha}
+            value={fecha}
+            onChange={cambiarFecha}
+            customStyles={{
+              dateInput: {
+                borderColor: 'grey',
+                borderWidth: 1,
+                borderRadius: 10,
+                backgroundColor: 'white'
+              }
+            }}
+          />)}
         <View>
           <Text style={styles.texto}>MOTIVO:</Text>
 
-          <RNPickerSelect
-              items={options}
-              onValueChange={formRechazo.handleChange('motivo')}
-              value={formRechazo.values.motivo}
+          <DropDownPicker
+            open={openMotivo}
+            value={selectedMotivo}
+            items={options}
+            setOpen={setOpenMotivo}
+            setValue={(callback) => {
+              const value = callback(selectedMotivo);
+              setSelectedMotivo(value);
+              formRechazo.setFieldValue('motivo', value);
+            }}
+            setItems={() => { }}
+            placeholder="SELECCIONAR MOTIVO"
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
+          />
 
-              placeholder={{
-                label: 'SELECCIONAR MOTIVO',
-                value: null,
-                color: '#9EA0A4',
-              }}
-              style={styles.pickerStyle}
-            />
 
           <Text></Text>
           <Text style={styles.texto}>OBSERVACIONES:</Text>
@@ -192,28 +198,28 @@ let texto = format(fecha, 'yyyy-MM-dd');
         }
         onPress={formRechazo.handleSubmit}
       />
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        cancelText="No, cancelar"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => {
-          setAlerta({ show: false })
-        }}
-        onConfirmPressed={() => {
-          setAlerta({ show: false })
-          if (alerta.vuelve == true) {
-            navigation.popToTop();
-          }
-        }}
-      />
+      {alerta.show && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => {
+                setAlerta({ ...alerta, show: false });
+                if (alerta.vuelve) {
+                  navigation.popToTop();
+                }
+              }}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View >
   );
 }
@@ -265,7 +271,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#399dad'
   },
-  textocalendar:{
+  textocalendar: {
     textAlign: "center"
   },
   calendario: {

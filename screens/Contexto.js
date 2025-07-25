@@ -11,7 +11,12 @@ export const MovieProvider = (props) => {
 // MOVIES = animales
 
   return (
-    <MovieContext.Provider value={[movies, setMovies, trata, setTrata, motivosx, setMotivos]} >
+    <MovieContext.Provider value={{
+      movies, setMovies,
+      trata, setTrata,
+      torosx, setTorosx,
+      motivosx, setMotivos
+    }}>
       {props.children}
     </MovieContext.Provider>
   )

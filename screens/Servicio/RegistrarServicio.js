@@ -1,3 +1,4 @@
+// Código actualizado con react-native-dropdown-picker
 import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { Button } from 'react-native-elements';
@@ -8,32 +9,36 @@ import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { format } from 'date-fns';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
-import RNPickerSelect from 'react-native-picker-select';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 export default ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [movies, setMovies, tratamientos, torosData] = useContext(MovieContext);
+  const { movies, setMovies, trata: tratamientos, torosx: torosData } = useContext(MovieContext);
   const [isPregnant, setIsPregnant] = useState(false);
   const route = useRoute();
   const { animal, tambo, usuario } = route.params;
 
-  const [tratamientoOptions, setTratamientoOptions] = useState([{ value: '-', label: '' }]);
-  const [toros, setToros] = useState([{ key: 1, value: 'Robo', label: 'ROBO' }]);
+  const [tratamientoOptions, setTratamientoOptions] = useState([]);
+  const [toros, setToros] = useState([]);
   const tipoOptions = [
-    { key: 1, value: 'Convencional', label: 'CONVENCIONAL' },
-    { key: 2, value: 'Sexado', label: 'SEXADO' }
+    { label: 'CONVENCIONAL', value: 'Convencional' },
+    { label: 'SEXADO', value: 'Sexado' },
   ];
-  
-  const [alertData, setAlertData] = useState({
+
+  const [openTratamiento, setOpenTratamiento] = useState(false);
+  const [openToro, setOpenToro] = useState(false);
+  const [openTipo, setOpenTipo] = useState(false);
+
+  const [alerta, setAlerta] = useState({
     show: false,
-    title: '',
-    message: '',
+    titulo: '',
+    mensaje: '',
     color: '#DD6B55',
-    goBack: false,
+    vuelve: false,
   });
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export default ({ navigation }) => {
     const detalle = `Toro: ${datos.toro} / Tipo: ${datos.tipo} / Tratamiento: ${datos.tratamiento} / Obs: ${datos.obs}`;
     const serv = animal.nservicio;
     const estadoRepro = isPregnant ? "preñada" : "vacia";
-    
+
     const animalUpdate = {
       fservicio: formattedDate,
       nservicio: serv + 1,
@@ -133,12 +138,12 @@ export default ({ navigation }) => {
   };
 
   const showAlert = (title, message, color = '#DD6B55', goBack = false) => {
-    setAlertData({
+    setAlerta({
       show: true,
-      title,
-      message,
-      color,
-      goBack,
+      titulo: title,
+      mensaje: message,
+      color: color,
+      vuelve: goBack,
     });
   };
 
@@ -181,10 +186,51 @@ export default ({ navigation }) => {
               }}
             />
           )}
-          <PickerField label="TRATAMIENTO:" items={tratamientoOptions} formik={formik} fieldName="tratamiento" />
-          <PickerField label="TORO:" items={toros} formik={formik} fieldName="toro" />
-          <PickerField label="TIPO SEMEN:" items={tipoOptions} formik={formik} fieldName="tipo" />
-          <TextField label="OBSERVACIONES:" formik={formik} fieldName="obs" />
+          <Text style={styles.label}>TRATAMIENTO:</Text>
+          <DropDownPicker
+            open={openTratamiento}
+            value={formik.values.tratamiento}
+            items={tratamientoOptions}
+            setOpen={setOpenTratamiento}
+            setValue={cb => formik.setFieldValue('tratamiento', cb())}
+            setItems={setTratamientoOptions}
+            placeholder="SELECCIONAR TRATAMIENTO"
+            zIndex={3000}
+            style={{ marginBottom: 15 }}
+          />
+          <Text style={styles.label}>TORO:</Text>
+          <DropDownPicker
+            open={openToro}
+            value={formik.values.toro}
+            items={toros}
+            setOpen={setOpenToro}
+            setValue={cb => formik.setFieldValue('toro', cb())}
+            setItems={setToros}
+            placeholder="SELECCIONAR TORO"
+            zIndex={2000}
+            style={{ marginBottom: 15 }}
+          />
+
+          <Text style={styles.label}>TIPO SEMEN:</Text>
+          <DropDownPicker
+            open={openTipo}
+            value={formik.values.tipo}
+            items={tipoOptions}
+            setOpen={setOpenTipo}
+            setValue={cb => formik.setFieldValue('tipo', cb())}
+            setItems={() => { }}
+            placeholder="SELECCIONAR TIPO"
+            zIndex={1000}
+            style={{ marginBottom: 15 }}
+          />
+
+          <Text style={styles.label}>OBSERVACIONES:</Text>
+          <TextInput
+            style={styles.entrada}
+            onChangeText={formik.handleChange('obs')}
+            value={formik.values.obs}
+            multiline
+          />
         </ScrollView>
       </View>
       <Button
@@ -193,21 +239,26 @@ export default ({ navigation }) => {
         buttonStyle={styles.button}
         onPress={formik.handleSubmit}
       />
-      <AwesomeAlert
-        show={alertData.show}
-        title={alertData.title}
-        message={alertData.message}
-        closeOnTouchOutside={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmButtonColor={alertData.color}
-        onConfirmPressed={() => {
-          setAlertData({ show: false });
-          if (alertData.goBack) {
-            navigation.pop();
-          }
-        }}
-      />
+      {alerta.show && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => {
+                setAlerta({ ...alerta, show: false });
+                if (alerta.vuelve) navigation.popToTop();
+              }}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

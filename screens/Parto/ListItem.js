@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 
 export default function ListItem({ data, registrarParto, registrarAborto }) {
   const [alerta, setAlerta] = useState(false);
-  const { id, rp, fservicio, estrep, estpro, diasPre, categoria } = data;
-  const [parto, setParto] = useState(false);
+  const { rp, fservicio, estrep, estpro, diasPre, categoria } = data;
   const [siglas, guardarSiglas] = useState({
     cat: 'VC',
     prod: 'S',
@@ -28,103 +27,92 @@ export default function ListItem({ data, registrarParto, registrarAborto }) {
     });
   }, []);
 
-  const confirmar = () => {
-    setAlerta(true);
-  };
-
   return (
     <>
-      <TouchableOpacity style={styles.container} onPress={confirmar}>
+      <TouchableOpacity style={styles.container} onPress={() => setAlerta(true)}>
         <Text style={styles.text}>
           RP: {rp} ({siglas.cat}/{siglas.prod}/{siglas.rep}) - DIAS PREÑEZ: {diasPre}
         </Text>
       </TouchableOpacity>
 
-      <AwesomeAlert
-        show={alerta}
-        showProgress={false}
-        closeOnTouchOutside={true}
-        closeOnHardwareBackPress={true}
-        showCancelButton={true}
-        showConfirmButton={true}
-        cancelText="ABORTO"
-        confirmText="PARTO"
-        onDismiss={() => setAlerta(false)}
-        cancelButtonTextStyle={styles.buttonText}
-        confirmButtonTextStyle={styles.buttonText}
-        confirmButtonColor="#3AD577"
-        cancelButtonColor="#DD6B55"
-        contentContainerStyle={styles.alertContentContainer}
-        contentStyle={styles.alertContent}
-        actionContainerStyle={styles.alertActions} // Aquí está el cambio
-        cancelButtonStyle={styles.cancelButton}
-        confirmButtonStyle={styles.confirmButton}
-        onCancelPressed={() => {
-          setAlerta(false);
-          registrarAborto();
-        }}
-        onConfirmPressed={() => {
-          setAlerta(false);
-          registrarParto();
-        }}
-      />
+      <Modal
+        isVisible={alerta}
+        onBackdropPress={() => setAlerta(false)}
+        onBackButtonPress={() => setAlerta(false)}
+      >
+        <View style={styles.alertContainer}>
+          <Text style={styles.alertTitle}>¿QUÉ DESEA REGISTRAR?</Text>
+          <View style={styles.alertActions}>
+            <TouchableOpacity
+              style={[styles.alertButton, { backgroundColor: '#DD6B55' }]}
+              onPress={() => {
+                setAlerta(false);
+                registrarAborto();
+              }}
+            >
+              <Text style={styles.buttonText}>ABORTO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.alertButton, { backgroundColor: '#3AD577' }]}
+              onPress={() => {
+                setAlerta(false);
+                registrarParto();
+              }}
+            >
+              <Text style={styles.buttonText}>PARTO</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff', // Fondo blanco para los elementos
-    borderRadius: 15, // Bordes redondeados
-    padding: 15, // Espacio interno
-    marginBottom: 1, // Espacio entre elementos
-    shadowColor: '#000', // Sombra para darle profundidad
-    shadowOffset: { width: 0, height: 5 }, // Offset de la sombra
-    shadowOpacity: 0.1, // Opacidad de la sombra
-    shadowRadius: 10, // Difusión de la sombra
-    elevation: 5, // Elevación en Android
-    borderWidth: 1, // Borde definido
-    borderColor: '#e0e0e0', // Color del borde
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   text: {
     fontSize: 16,
-    color: '#333', // Color oscuro para el texto
+    color: '#333',
   },
-  buttonText: {
-    fontSize: 40,
-    fontWeight: 'lighter',
-    textAlign: 'center',
-    color: '#fff',
-  },
-  alertContentContainer: {
-    width: 400,
-    height: 450,
+  alertContainer: {
+    backgroundColor: 'white',
+    padding: 25,
     borderRadius: 15,
-    overflow: 'hidden',
+    alignItems: 'center',
   },
-  alertContent: {
-    padding: 5,
+  alertTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   alertActions: {
-    flexDirection: 'column-reverse', // Cambio aquí para que el botón de PARTO quede arriba
-    alignItems: 'center',
-    padding: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 15,
   },
-  cancelButton: {
-    backgroundColor: '#e12400',
-    width: 500,
-    height: 200,
+  alertButton: {
+    flex: 1,
+    paddingVertical: 12,
     borderRadius: 8,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 50
   },
-  confirmButton: {
-    backgroundColor: '#4db150',
-    width: 500,
-    height: 200,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

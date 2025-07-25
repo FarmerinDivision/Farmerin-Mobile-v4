@@ -3,18 +3,13 @@ import { StyleSheet, Text, View, Image, ActivityIndicator, TextInput, TouchableO
 import { Button } from 'react-native-elements';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import firebase from '../database/firebase';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons'; // Asegúrate de tener esta importación
 
 export default ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [mailo, setMailo] = useState("");
-  const [alerta, setAlerta] = useState({
-    show: false,
-    titulo: '',
-    mensaje: '',
-    color: '#DD6B55'
-  });
+  const [alerta, setAlerta] = useState("");
 
   const handleChange = (e) => {
     setMailo(e);
@@ -24,19 +19,9 @@ export default ({ navigation }) => {
     setLoading(true);
     try {
       await firebase.autenticacion.sendPasswordResetEmail(mailo);
-      setAlerta({
-        show: true,
-        titulo: '¡ATENCIÓN!',
-        mensaje: "TE HEMOS ENVIADO UN MAIL PARA RESTABLECER TU CONTRASEÑA, SI NO LO HAS RECIBIDO REVISA EN SPAM",
-        color: '#399dad'
-      });
+      setAlerta("TE HEMOS ENVIADO UN MAIL PARA RESTABLECER TU CONTRASEÑA, SI NO LO HAS RECIBIDO REVISA EN SPAM");
     } catch (e) {
-      setAlerta({
-        show: true,
-        titulo: '¡ATENCIÓN!',
-        mensaje: "EL CORREO INGRESADO NO SE ENCUENTRA REGISTRADO EN FARMERIN",
-        color: 'red'
-      });
+      setAlerta("EL CORREO INGRESADO NO SE ENCUENTRA REGISTRADO EN FARMERIN");
     } finally {
       setLoading(false);
     }
@@ -67,25 +52,23 @@ export default ({ navigation }) => {
           />
         </View>
       )}
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onConfirmPressed={() => {
-          setAlerta({ show: false });
-          navigation.navigate('MenuInicio');
-        }}
-        confirmButtonTextStyle={styles.alertButtonText}
-        titleStyle={styles.alertTitle}
-        messageStyle={styles.alertMessage}
-      />
+      {alerta && (
+        <Modal
+          isVisible={!!alerta}
+          onBackdropPress={() => setAlerta(false)}
+          onBackButtonPress={() => setAlerta(false)}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
+            <Text style={{ marginVertical: 10 }}>{typeof alerta === 'object' ? alerta.mensaje : alerta}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta(false)}
+              buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

@@ -20,10 +20,11 @@ function CustomBarChart({ data }) {
           <View
             style={[
               styles.bar,
-              { height: (item.value / maxDataValue) * 200 },
+              { height: item.value === 0 ? 1 : (item.value / maxDataValue) * 200 },
               { backgroundColor: item.color }
             ]}
           />
+
           <Text style={styles.barValue}>{item.value}</Text>
           <Text style={styles.barLabel}>{item.label}</Text>
         </View>
@@ -48,9 +49,9 @@ function Grafico() {
     nuncaPaso: false,
     secosNaN: false
   });
-  
-  const [showInfoView, setShowInfoView] = useState(false); 
-  const [selectedAnimals, setSelectedAnimals] = useState([]); 
+
+  const [showInfoView, setShowInfoView] = useState(false);
+  const [selectedAnimals, setSelectedAnimals] = useState([]);
 
   const [cantidadAnimalesEnOrdeñe, setCantidadAnimalesEnOrdeñe] = useState(0);
 
@@ -59,76 +60,76 @@ function Grafico() {
 
   useEffect(() => {
     const fetchData = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Obtener los datos del tambo
-            const { parsedData, parsedNoRegsData } = await obtenerDatos(tambo);
+      setLoading(true);
+      setError(null);
+      try {
+        // Obtener los datos del tambo
+        const { parsedData, parsedNoRegsData } = await obtenerDatos(tambo);
 
-            console.log('ARRAY ARRAY ARRAY', parsedNoRegsData);
+        console.log('ARRAY ARRAY ARRAY', parsedNoRegsData);
 
-            // Filtrar y mapear los datos relevantes para Secos/No Registrados
-            const filteredSecosNaNData = parsedNoRegsData
-                .filter(row => row.cells[1] !== 'RFID') // Filtrar encabezado
-                .map(async (row) => {
-                    const RFID = row.cells[1]; // RFID del animal
+        // Filtrar y mapear los datos relevantes para Secos/No Registrados
+        const filteredSecosNaNData = parsedNoRegsData
+          .filter(row => row.cells[1] !== 'RFID') // Filtrar encabezado
+          .map(async (row) => {
+            const RFID = row.cells[1]; // RFID del animal
 
-                    // Buscar en la colección animal de Firebase
-                    const animalSnapshot = await firebase.db.collection('animal').where('erp', '==', RFID).get();
-                    if (!animalSnapshot.empty) {
-                        const animalData = animalSnapshot.docs[0].data();
-                        const { rp, estrep, estpro, mbaja } = animalData;
+            // Buscar en la colección animal de Firebase
+            const animalSnapshot = await firebase.db.collection('animal').where('erp', '==', RFID).get();
+            if (!animalSnapshot.empty) {
+              const animalData = animalSnapshot.docs[0].data();
+              const { rp, estrep, estpro, mbaja } = animalData;
 
-                        // Verificar si el animal tiene mbaja
-                        if (mbaja) {
-                            return {
-                                RP: 'No Registrada', // Cambiado a 'No Registrada'
-                                RFID,
-                                estPro: 'No Registrada', // Cambiado a 'No Registrada'
-                                estRep: 'No Registrada', // Cambiado a 'No Registrada'
-                                mensaje: 'El animal no está registrado',
-                            };
-                        }
-                        return {
-                            RP: rp,
-                            RFID,
-                            estPro: estpro,
-                            estRep: estrep,
-                            mensaje: 'El animal está registrado',
-                        };
-                    }
-                    // Si no hay coincidencia en Firebase, devolver 'No Registrada'
-                    return {
-                        RP: 'No Registrada',
-                        RFID,
-                        estPro: 'No Registrada',
-                        estRep: 'No Registrada',
-                        mensaje: 'El animal no está registrado',
-                    };
-                });
+              // Verificar si el animal tiene mbaja
+              if (mbaja) {
+                return {
+                  RP: 'No Registrada', // Cambiado a 'No Registrada'
+                  RFID,
+                  estPro: 'No Registrada', // Cambiado a 'No Registrada'
+                  estRep: 'No Registrada', // Cambiado a 'No Registrada'
+                  mensaje: 'El animal no está registrado',
+                };
+              }
+              return {
+                RP: rp,
+                RFID,
+                estPro: estpro,
+                estRep: estrep,
+                mensaje: 'El animal está registrado',
+              };
+            }
+            // Si no hay coincidencia en Firebase, devolver 'No Registrada'
+            return {
+              RP: 'No Registrada',
+              RFID,
+              estPro: 'No Registrada',
+              estRep: 'No Registrada',
+              mensaje: 'El animal no está registrado',
+            };
+          });
 
-            // Esperar a que se resuelvan todas las promesas
-            const results = await Promise.all(filteredSecosNaNData);
-            // Filtrar resultados nulos
-            const validResults = results.filter(result => result !== null);
-            
-            setData(parsedData); // Datos principales
-            setSecosNaNData(validResults); // Guardar Secos/No Registrados
+        // Esperar a que se resuelvan todas las promesas
+        const results = await Promise.all(filteredSecosNaNData);
+        // Filtrar resultados nulos
+        const validResults = results.filter(result => result !== null);
 
-        } catch (error) {
-            console.error("Error al obtener los datos:", error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
-        }
+        setData(parsedData); // Datos principales
+        setSecosNaNData(validResults); // Guardar Secos/No Registrados
+
+      } catch (error) {
+        console.error("Error al obtener los datos:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
-}, [tambo]);
+  }, [tambo]);
 
-  
-  
-  
+
+
+
 
   useEffect(() => {
     if (Array.isArray(data) && data.length > 0) {
@@ -139,7 +140,7 @@ function Grafico() {
       const filteredNuncaPaso = nuncaPaso.filter(row => !row.cells.includes('RFID'));
 
       console.log('SECOS NAN', secosNaNData);
-       
+
       setAnimalesSeLeyo(seLeyo);
       setAnimalesNoLeyo(noLeyo);
       setAnimalesAusentes(ausentes);
@@ -187,8 +188,8 @@ function Grafico() {
   };
 
   const handleCloseInfoView = () => {
-    setShowInfoView(false); 
-    setSelectedAnimals([]); 
+    setShowInfoView(false);
+    setSelectedAnimals([]);
   };
 
   if (loading) {
@@ -230,53 +231,66 @@ function Grafico() {
         Animales en ordeñe: {cantidadAnimalesEnOrdeñe}
       </Text>
       <Text style={styles.title}>{tambo?.nombre} - Control de Ingreso</Text>
-      <CustomBarChart data={chartData} />
-      
+
+      {/* Indicador textual de ayuda */}
+      <Text style={styles.scrollHint}>
+        Desliza hacia los lados para ver todas las categorías →
+      </Text>
+
+      {/* Scroll horizontal para el gráfico */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+        <View style={{ paddingHorizontal: 10 }}>
+          <CustomBarChart data={chartData} />
+        </View>
+      </ScrollView>
+
+
+
       <View style={styles.buttonsContainer}>
         {animalesSeLeyo.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#027200' }]} 
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#027200' }]}
             onPress={() => handleShowInfo(animalesSeLeyo, 'seLeyo')}
           >
             <Text style={styles.buttonText}>Ver Se Leyó ({animalesSeLeyo.length})</Text>
           </TouchableOpacity>
         )}
         {animalesNoLeyo.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#990000' }]} 
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#990000' }]}
             onPress={() => handleShowInfo(animalesNoLeyo, 'noLeyo')}
           >
             <Text style={styles.buttonText}>Ver No Se Leyó ({animalesNoLeyo.length})</Text>
           </TouchableOpacity>
         )}
         {animalesAusentes.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#084d6e' }]} 
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#084d6e' }]}
             onPress={() => handleShowInfo(animalesAusentes, 'ausentes')}
           >
             <Text style={styles.buttonText}>Ver Ausentes ({animalesAusentes.length})</Text>
           </TouchableOpacity>
         )}
         {animalesNuncaPaso.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#f08a0c' }]} 
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#f08a0c' }]}
             onPress={() => handleShowInfo(animalesNuncaPaso, 'nuncaPaso')}
           >
             <Text style={styles.buttonText}>Ver Nunca Se Leyó ({animalesNuncaPaso.length})</Text>
           </TouchableOpacity>
         )}
       </View>
-  
+
       {/* Botón separado para "Secos/No Registrados" */}
       {secosNaNData.length > 0 && (
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#2d3323', marginBottom: 20 }]} 
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#2d3323', marginBottom: 20 }]}
           onPress={() => handleShowInfo(secosNaNData, 'secosNaN')}
         >
           <Text style={styles.buttonText}>Ver Secos/No Registrados ({secosNaNData.length})</Text>
         </TouchableOpacity>
       )}
-  
+
       <View style={styles.listContainer}>
         {selectedLists.seLeyo && <AnimalesSeLeyoList animales={animalesSeLeyo} />}
         {selectedLists.noLeyo && <AnimalesNoLeyoList animales={animalesNoLeyo} />}
@@ -288,42 +302,42 @@ function Grafico() {
       {showInfoView && (
         <View style={styles.infoView}>
           <Text style={styles.infoTitle}>Estado de {selectedAnimals.listType}</Text>
-    <TouchableOpacity style={styles.closeButton} onPress={handleCloseInfoView}>
-      <Text style={styles.closeButtonText}>Cerrar</Text>
-    </TouchableOpacity>
-    <FlatList
-      data={selectedAnimals.animals}
-      keyExtractor={(item) => item.RFID}
-      renderItem={({ item }) => (
-        <View style={styles.infoItem}>
-          {/* Condición para Secos/No Registrados */}
-          {selectedAnimals.listType === 'secosNaN' && (
-            <>
-              <Text style={styles.textLabel}>RP: {item.RP}</Text>
-              <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
-              <Text style={styles.textLabel}>Est. Pro: {item.estPro}</Text>
-              <Text style={styles.textLabel}>Est. Rep: {item.estRep}</Text>
-            </>
-          )}
-          {/* Condición para Ausentes */}
-          {selectedAnimals.listType === 'ausentes' && (
-            <>
-              <Text style={styles.textLabel}>RP: {item.RP}</Text>
-              <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
-              <Text style={styles.textLabel}>Días Ausentes: {item.DiasAusente}</Text>
-            </>
-          )}
-          {/* Condición para Se Leyó, No Se Leyó, Nunca Pasó */}
-          {(selectedAnimals.listType === 'seLeyo' || selectedAnimals.listType === 'noLeyo' || selectedAnimals.listType === 'nuncaPaso') && (
-            <>
-              <Text style={styles.textLabel}>RP: {item.RP}</Text>
-              <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
-            </>
-          )}
+          <TouchableOpacity style={styles.closeButton} onPress={handleCloseInfoView}>
+            <Text style={styles.closeButtonText}>Cerrar</Text>
+          </TouchableOpacity>
+          <FlatList
+            data={selectedAnimals.animals}
+            keyExtractor={(item) => item.RFID}
+            renderItem={({ item }) => (
+              <View style={styles.infoItem}>
+                {/* Condición para Secos/No Registrados */}
+                {selectedAnimals.listType === 'secosNaN' && (
+                  <>
+                    <Text style={styles.textLabel}>RP: {item.RP}</Text>
+                    <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
+                    <Text style={styles.textLabel}>Est. Pro: {item.estPro}</Text>
+                    <Text style={styles.textLabel}>Est. Rep: {item.estRep}</Text>
+                  </>
+                )}
+                {/* Condición para Ausentes */}
+                {selectedAnimals.listType === 'ausentes' && (
+                  <>
+                    <Text style={styles.textLabel}>RP: {item.RP}</Text>
+                    <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
+                    <Text style={styles.textLabel}>Días Ausentes: {item.DiasAusente}</Text>
+                  </>
+                )}
+                {/* Condición para Se Leyó, No Se Leyó, Nunca Pasó */}
+                {(selectedAnimals.listType === 'seLeyo' || selectedAnimals.listType === 'noLeyo' || selectedAnimals.listType === 'nuncaPaso') && (
+                  <>
+                    <Text style={styles.textLabel}>RP: {item.RP}</Text>
+                    <Text style={styles.textLabel}>eRP: {item.RFID}</Text>
+                  </>
+                )}
+              </View>
+            )}
+          />
         </View>
-      )}
-    />
-  </View>
       )}
     </ScrollView>
   );
@@ -348,7 +362,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'flex-end',
     marginVertical: 20,
+    minWidth: 150 // <- Esto garantiza espacio para las barras
   },
+
   barContainer: {
     alignItems: 'center',
     marginHorizontal: 10,
@@ -464,7 +480,14 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     textAlign: 'center',
     marginVertical: 10,
-  }
+  },
+  scrollHint: {
+    fontSize: 20,
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+
 });
 
 export default Grafico;

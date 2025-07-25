@@ -1,9 +1,8 @@
 import React,{useEffect,useState} from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Modal, TouchableOpacity } from 'react-native';
 import { format } from 'date-fns'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Button } from 'react-native-elements';
-import AwesomeAlert from 'react-native-awesome-alerts';
 export default function ListItem({ data, eliminarRecepcion}) {
   const [alerta, setAlerta] = useState(false);
 
@@ -38,27 +37,36 @@ const confirmar = ()=>{
         }
       />
     </View>
-    <AwesomeAlert
-      show={alerta}
-      showProgress={false}
-      title="¡ATENCIÓN!"
-      message="¿DESEA ELIMINAR ESTA RECEPCIÓN?"
-      closeOnTouchOutside={false}
-      closeOnHardwareBackPress={false}
-      showCancelButton={true}
-      showConfirmButton={true}
-      cancelText="CANCELAR"
-      confirmText="ACEPTAR"
-      confirmButtonColor="#3AD577"
-      cancelButtonColor="#DD6B55"
-      onCancelPressed={() => {
-        setAlerta(false);
-      }}
-      onConfirmPressed={() => {
-        setAlerta(false);
-        eliminarRecepcion();
-      }}
-    />
+    <Modal
+      visible={alerta}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setAlerta(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>¡ATENCIÓN!</Text>
+          <Text style={styles.modalMessage}>¿DESEA ELIMINAR ESTA RECEPCIÓN?</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: '#DD6B55', flex: 1, marginRight: 5 }]}
+              onPress={() => setAlerta(false)}
+            >
+              <Text style={styles.modalButtonText}>CANCELAR</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: '#3AD577', flex: 1, marginLeft: 5 }]}
+              onPress={() => {
+                setAlerta(false);
+                eliminarRecepcion();
+              }}
+            >
+              <Text style={styles.modalButtonText}>ACEPTAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   </View>
   )
 }
@@ -90,5 +98,44 @@ const styles = StyleSheet.create({
   botonBorrar: {
     margin: 0,
     padding: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 25,
+    alignItems: 'center',
+    minWidth: 250,
+    elevation: 5,
+    width: 300,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#222',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });

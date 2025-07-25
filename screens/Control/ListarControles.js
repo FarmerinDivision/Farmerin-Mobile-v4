@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Modal,  SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
 import { SearchBar } from 'react-native-elements';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -14,16 +14,16 @@ import ListItemTolvas from './ListItemTolvas';
 import { format } from 'date-fns';
 import { encode } from 'base-64';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { useRoute } from '@react-navigation/core';
 
 
 export default ({ navigation }) => {
 
   const route = useRoute();
-  const {tambo} = route.params;
-  const {control} = route.params;
-  const {usuario} = route.params;
+  const { tambo } = route.params;
+  const { control } = route.params;
+  const { usuario } = route.params;
 
   const [loading, setLoading] = useState(false);
   const [animalesControl, setAnimalesControl] = useState([]);
@@ -46,7 +46,7 @@ export default ({ navigation }) => {
     titulo: '',
     mensaje: '',
     color: '#DD6B55',
-    vuelve:false
+    vuelve: false
   });
 
   useEffect(() => {
@@ -192,15 +192,15 @@ export default ({ navigation }) => {
                 }
                 firebase.db.collection('animal').doc(doc.id).update(valores);
                 try {
-                firebase.db.collection('animal').doc(doc.id).collection('eventos').add({
-                  fecha: fecha,
-                  tipo: 'Control Lechero',
-                  detalle: detalle,
-                  usuario: usuario
-                })
-              }catch(e){
-                console.log(e);
-              }
+                  firebase.db.collection('animal').doc(doc.id).collection('eventos').add({
+                    fecha: fecha,
+                    tipo: 'Control Lechero',
+                    detalle: detalle,
+                    usuario: usuario
+                  })
+                } catch (e) {
+                  console.log(e);
+                }
 
               } catch (e) {
 
@@ -209,7 +209,7 @@ export default ({ navigation }) => {
               }
             });
 
-          }else{
+          } else {
             setAlerta({
               show: true,
               titulo: '¡ ERROR !',
@@ -258,7 +258,7 @@ export default ({ navigation }) => {
           titulo: '¡ATENCION!',
           mensaje: 'CONTROL LECHERO CONFIRMADO CON ÉXITO ',
           color: '#3AD577',
-          vuelve:true
+          vuelve: true
         });
       }
 
@@ -482,7 +482,7 @@ export default ({ navigation }) => {
             />
           </SafeAreaView>
         )}
-        
+
         {/* Modal de Confirmación */}
         <Modal animationType='fade' transparent visible={confirmacion}>
           <View style={styles.center}>
@@ -544,24 +544,30 @@ export default ({ navigation }) => {
         )}
 
         {/* Alert Component */}
-        <AwesomeAlert
-          show={alerta.show}
-          showProgress={false}
-          title={alerta.titulo}
-          message={alerta.mensaje}
-          closeOnTouchOutside={false}
-          closeOnHardwareBackPress={false}
-          showCancelButton={false}
-          showConfirmButton={true}
-          confirmText="ACEPTAR"
-          confirmButtonColor={alerta.color}
-          onConfirmPressed={() => {
-            setAlerta({ show: false });
-            if (alerta.vuelve) {
-              navigation.popToTop();
-            }
-          }}
-        />
+        {alerta && (
+          <Modal
+            isVisible={!!alerta.show}
+            onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+            onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+          >
+            <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+              <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>  {/* ✅ CORRECTO */}
+              <Button
+                title="ACEPTAR"
+                onPress={() => {
+                  if (alerta.vuelve) {
+                    navigation.goBack();
+                  } else {
+                    setAlerta({ ...alerta, show: false });
+                  }
+                }}
+                buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
+              />
+            </View>
+          </Modal>
+
+        )}
       </View>
     </View>
   );

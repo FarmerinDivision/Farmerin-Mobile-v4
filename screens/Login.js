@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, ActivityIndicator, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { Button } from 'react-native-elements';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { Ionicons } from '@expo/vector-icons'; // Asegúrate de tener este paquete instalado
 import firebase from '../database/firebase';
 import { useFormik } from 'formik';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AwesomeAlert from 'react-native-awesome-alerts';
+//import AwesomeAlert from 'react-native-awesome-alerts';
 
 const CustomPasswordInput = ({ onChangeText, value }) => {
   const [isPasswordVisible, setPasswordVisible] = useState(false);
@@ -26,10 +26,10 @@ const CustomPasswordInput = ({ onChangeText, value }) => {
         placeholderTextColor="gray"
       />
       <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-        <Ionicons 
-          name={isPasswordVisible ? 'eye-off' : 'eye'} 
-          size={20} 
-          color="gray" 
+        <Ionicons
+          name={isPasswordVisible ? 'eye-off' : 'eye'}
+          size={20}
+          color="gray"
         />
       </TouchableOpacity>
     </View>
@@ -71,15 +71,15 @@ export default ({ navigation }) => {
     try {
       await AsyncStorage.setItem('usuario', usuario);
       await AsyncStorage.setItem('nombre', nombreUsuario);
-      navigation.navigate('Root'); 
-  } catch (error) {
+      navigation.navigate('Root');
+    } catch (error) {
       setAlerta({
-          show: true,
-          titulo: 'Error',
-          mensaje: error.message,
-          color: '#FF5252'
+        show: true,
+        titulo: 'Error',
+        mensaje: error.message,
+        color: '#FF5252'
       });
-  }
+    }
   };
 
   async function Login(datos) {
@@ -146,21 +146,28 @@ export default ({ navigation }) => {
             <Text style={styles.textVersion}>Version 4.0.0</Text>
             <Text style={styles.textVersion}>Farmerin Division S.A. - &copy; 2020</Text>
           </View>
-         
 
-          <AwesomeAlert
-            show={alerta.show}
-            showProgress={false}
-            title={alerta.titulo}
-            message={alerta.mensaje}
-            closeOnTouchOutside={false}
-            closeOnHardwareBackPress={false}
-            showCancelButton={false}
-            showConfirmButton={true}
-            confirmText="Aceptar"
-            confirmButtonColor={alerta.color}
-            onConfirmPressed={() => setAlerta({ show: false })}
-          />
+
+          <Modal
+            transparent={true}
+            visible={alerta.show}
+            animationType="fade"
+            onRequestClose={() => setAlerta({ show: false })}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>{alerta.titulo}</Text>
+                <Text style={styles.modalMessage}>{alerta.mensaje}</Text>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: alerta.color }]}
+                  onPress={() => setAlerta({ show: false })}
+                >
+                  <Text style={styles.modalButtonText}>Aceptar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
         </>
       )}
     </View>
@@ -268,4 +275,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#757575',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    color: '#666',
+    textAlign: 'center',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  
 });

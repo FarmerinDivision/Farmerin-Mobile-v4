@@ -8,12 +8,12 @@ import ListItem from './ListItem';
 import { SearchBar } from 'react-native-elements';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import AwesomeAlert from 'react-native-awesome-alerts';
+import Modal from 'react-native-modal';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
-  const [movies, setMovies] = useContext(MovieContext)
+  const { movies, setMovies } = useContext(MovieContext)
   const [animales, guardarAnimales] = useState([]);
   const [animalesFilter, guardarAnimalesFilter] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -151,77 +151,73 @@ export default ({ navigation }) => {
 
 
   return (
-    <View style={styles.container}>
-    <SearchBar
-      placeholder="Buscar por RP"
-      onChangeText={updateSearch}
-      value={rp}
-      lightTheme
-      containerStyle={styles.searchContainer}
-      inputContainerStyle={styles.searchInput}
-    />
-
-    <View style={styles.listado}>
-      {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color='#1b829b' />
+    <View style={{flex: 1}}>
+      <SearchBar
+        placeholder="Buscar por RP"
+        onChangeText={updateSearch}
+        value={rp}
+        lightTheme
+        containerStyle={styles.searchContainer}
+        inputContainerStyle={styles.searchInput}
+      />
+      <View style={[styles.listado, {flex: 1}]}> 
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color='#1b829b' />
+          </View>
+        ) : animales.length === 0 ? (
+          <Text style={styles.alerta}>NO SE ENCONTRARON ANIMALES</Text>
+        ) : (
+          <FlatList
+            data={animalesFilter}
+            keyExtractor={item => item.id}
+            initialNumToRender={100}
+            renderItem={({ item }) => (
+              <ListItem
+                data={item}
+                animales={animales}
+                guardarAnimales={guardarAnimales}
+              />
+            )}
+            ItemSeparatorComponent={() => <Separator />}
+          />
+        )}
+      </View>
+      {animales.length > 0 && !loading && (
+        <View style={{padding: 10, backgroundColor: '#fff'}}>
+          <Button
+            title="  ACEPTAR"
+            icon={
+              <Icon
+                name="check-square"
+                size={35}
+                color="white"
+              />
+            }
+            onPress={cambiarAnimales}
+          />
         </View>
-      ) : animalesFilter.length === 0 && !animales.length ? (
-        <Text style={styles.alerta}>NO SE ENCONTRARON ANIMALES</Text>
-      ) : (
-        <>
-           <FlatList
-              data={animalesFilter}
-              keyExtractor={item => item.id}
-              initialNumToRender={100}
-              renderItem={({ item }) => (
-                <ListItem
-                  data={item}
-                  animales={animales}
-                  guardarAnimales={guardarAnimales}
-                />
-              )
-              }
-              ItemSeparatorComponent={() => <Separator />}
+      )}
+      {alerta && (
+        <Modal
+          isVisible={!!alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta({ ...alerta, show: false })}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
             />
-
-           <Button
-           title="  ACEPTAR"
-           icon={
-             <Icon
-               name="check-square"
-               size={35}
-               color="white"
-             />
-           }
-           onPress={cambiarAnimales}
-            />
-
-        </>
+          </View>
+        </Modal>
       )}
     </View>
-
-    <AwesomeAlert
-      show={alerta.show}
-      showProgress={false}
-      title={alerta.titulo}
-      message={alerta.mensaje}
-      closeOnTouchOutside={false}
-      closeOnHardwareBackPress={false}
-      showCancelButton={false}
-      showConfirmButton={true}
-      confirmText="ACEPTAR"
-      confirmButtonColor={alerta.color}
-      onCancelPressed={() => setAlerta({ show: false })}
-      onConfirmPressed={() => {
-        setAlerta({ show: false });
-        if (alerta.vuelve) {
-          navigation.popToTop();
-        }
-      }}
-    />
-  </View>
-);}
+  );
+}
 
 const Separator = () => <View style={{ flex: 1, height: 1, backgroundColor: '#2980B9' }}></View>
 

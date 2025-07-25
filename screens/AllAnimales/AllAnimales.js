@@ -12,7 +12,7 @@ import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
-  const [movies] = useContext(MovieContext)
+  const { movies } = useContext(MovieContext)
   const [showTambos, setShowTambos] = useState(false);
   const [seleccionado, setSeleccionado] = useState({});
   const [animales, guardarAnimales] = useState([]);

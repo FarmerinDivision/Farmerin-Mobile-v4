@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, TextInput,TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableHighlight } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
@@ -10,21 +10,27 @@ import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AwesomeAlert from 'react-native-awesome-alerts';
-import RNPickerSelect from 'react-native-picker-select';
+import Modal from 'react-native-modal';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { MovieContext } from "../Contexto"
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
   const [fecha, setFecha] = useState(new Date());
-  const [movies, setMovies, motivosx] = useContext(MovieContext)
+  const { movies, setMovies, motivosx } = useContext(MovieContext)
   const route = useRoute();
-  const {animal} = route.params;
-  const {usuario} = route.params;
-  const {tambo} = route.params;
+  const { animal } = route.params;
+  const { usuario } = route.params;
+  const { tambo } = route.params;
   const [tambos, setTambos] = useState([{ value: '0', label: 'OTRO' }]);
   const [motivos, setMotivos] = useState([{ value: '', label: '' }]);
   const [show, setShow] = useState(false);
+  const [openMotivo, setOpenMotivo] = useState(false);
+  const [openTambo, setOpenTambo] = useState(false);
+
+  const [selectedMotivo, setSelectedMotivo] = useState('Muerte');
+  const [selectedTambo, setSelectedTambo] = useState('0');
+  
 
   const [alerta, setAlerta] = useState({
     show: false,
@@ -45,7 +51,7 @@ export default ({ navigation }) => {
 
   const validate = values => {
     const errors = {}
-    if (!values.motivo){
+    if (!values.motivo) {
       errors.motivo = "INGRESE UN MOTIVO DE BAJA"
     }
     if ((values.motivo == 'Transferencia') && (values.tambo == '0') && (values.nombreTambo == '')) {
@@ -135,7 +141,7 @@ export default ({ navigation }) => {
 
     let detalle = 'Motivo: ' + datos.motivo;
     let an;
-    let tipo='Baja';
+    let tipo = 'Baja';
 
     //Formatea fecha 
     const tipof = typeof datos.fecha;
@@ -169,7 +175,7 @@ export default ({ navigation }) => {
         detalle = detalle + ' / Tambo: ' + datos.nombreTambo
         //Si es tranferida a un tambo propio
       } else {
-        tipo='Alta';
+        tipo = 'Alta';
         an = { idtambo: datos.tambo };
       }
 
@@ -178,8 +184,8 @@ export default ({ navigation }) => {
       let objIndex = movies.findIndex((obj => obj.id == animal.id));
       const copia = [...movies]
       const obj = copia[objIndex]
-      const nuevo = Object.assign({},obj, an)
-      copia[objIndex]=nuevo
+      const nuevo = Object.assign({}, obj, an)
+      copia[objIndex] = nuevo
       setMovies(copia)
       firebase.db.collection('animal').doc(animal.id).update(an);
       firebase.db.collection('animal').doc(animal.id).collection('eventos').add({
@@ -210,14 +216,14 @@ export default ({ navigation }) => {
   }
   function cambiarFecha(event, date) {
     const currentDate = date;
-    setShow(false); 
+    setShow(false);
     setFecha(currentDate);
     formBaja.handleChange('fecha')
   };
-const handlever = ()=> {
-  setShow(true);
-}
-let texto = format(fecha, 'yyyy-MM-dd');
+  const handlever = () => {
+    setShow(true);
+  }
+  let texto = format(fecha, 'yyyy-MM-dd');
   return (
     <View style={styles.container}>
       <InfoAnimal
@@ -226,57 +232,72 @@ let texto = format(fecha, 'yyyy-MM-dd');
       <View style={styles.form}>
         <Text style={styles.texto}>FECHA:</Text>
         <TouchableHighlight style={styles.calendario} onPress={handlever}>
-          <View 
-          
+          <View
+
           ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
         {show && (
-        <DateTimePicker
-          placeholder="Fecha"
-          dateFormat="DD/MM/YYYY"
-          maximumDate={new Date()}
-          showIcon={true}
-          androidMode="spinner"
-          style={styles.fecha}
-          value={fecha}
-          onChange={cambiarFecha}
-          customStyles={{
-            dateInput: {
-              borderColor: 'grey',
-              borderWidth: 1,
-              borderRadius: 10,
-              backgroundColor: 'white'
-            }
-          }}
-        /> )}
+          <DateTimePicker
+            placeholder="Fecha"
+            dateFormat="DD/MM/YYYY"
+            maximumDate={new Date()}
+            showIcon={true}
+            androidMode="spinner"
+            style={styles.fecha}
+            value={fecha}
+            onChange={cambiarFecha}
+            customStyles={{
+              dateInput: {
+                borderColor: 'grey',
+                borderWidth: 1,
+                borderRadius: 10,
+                backgroundColor: 'white'
+              }
+            }}
+          />)}
         <View>
           <Text style={styles.texto}>MOTIVO:</Text>
 
-          <RNPickerSelect
+          <DropDownPicker
+            open={openMotivo}
+            value={selectedMotivo}
             items={motivos}
-            onValueChange={formBaja.handleChange('motivo')}
-            value={formBaja.values.motivo}
-
-            placeholder={{}}
-            style={styles.pickerStyle}
+            setOpen={setOpenMotivo}
+            setValue={(callback) => {
+              const value = callback(selectedMotivo);
+              setSelectedMotivo(value);
+              formBaja.setFieldValue('motivo', value);
+            }}
+            setItems={setMotivos}
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
           />
 
+
+
         </View>
-        
+
         {
-        formBaja.errors.motivo ? <Text style={styles.error}>{formBaja.errors.motivo}</Text> : null}
-        
-        {(formBaja.values.motivo == 'Transferencia') && 
+          formBaja.errors.motivo ? <Text style={styles.error}>{formBaja.errors.motivo}</Text> : null}
+
+        {(formBaja.values.motivo == 'Transferencia') &&
           <View>
             <Text style={styles.texto}>TAMBO:</Text>
-          
-            <RNPickerSelect
-              items={tambos}
-              onValueChange={formBaja.handleChange('tambo')}
-              value={formBaja.values.tambo}
 
-              placeholder={{}}
-              style={styles.pickerStyle}
+            <DropDownPicker
+              open={openTambo}
+              value={selectedTambo}
+              items={tambos}
+              setOpen={setOpenTambo}
+              setValue={(callback) => {
+                const value = callback(selectedTambo);
+                setSelectedTambo(value);
+                formBaja.setFieldValue('tambo', value);
+              }}
+              setItems={setTambos}
+              style={styles.dropdown}
+              dropDownContainerStyle={styles.dropdownContainer}
             />
+
 
           </View>
 
@@ -308,28 +329,23 @@ let texto = format(fecha, 'yyyy-MM-dd');
         }
         onPress={formBaja.handleSubmit}
       />
-      <AwesomeAlert
-        show={alerta.show}
-        showProgress={false}
-        title={alerta.titulo}
-        message={alerta.mensaje}
-        closeOnTouchOutside={false}
-        closeOnHardwareBackPress={false}
-        showCancelButton={false}
-        showConfirmButton={true}
-        cancelText="No, cancel"
-        confirmText="ACEPTAR"
-        confirmButtonColor={alerta.color}
-        onCancelPressed={() => {
-          setAlerta({ show: false })
-        }}
-        onConfirmPressed={() => {
-          setAlerta({ show: false })
-          if (alerta.vuelve == true) {
-            navigation.popToTop();
-          }
-        }}
-      />
+      {alerta.show && (
+        <Modal
+          isVisible={alerta.show}
+          onBackdropPress={() => setAlerta({ ...alerta, show: false })}
+          onBackButtonPress={() => setAlerta({ ...alerta, show: false })}
+        >
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: alerta.color }}>{alerta.titulo}</Text>
+            <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
+            <Button
+              title="ACEPTAR"
+              onPress={() => setAlerta({ ...alerta, show: false })}
+              buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
+            />
+          </View>
+        </Modal>
+      )}
     </View >
   );
 }
@@ -392,7 +408,7 @@ const styles = StyleSheet.create({
     borderColor: 'red'
 
   },
-  textocalendar:{
+  textocalendar: {
     textAlign: "center"
   },
   calendario: {
