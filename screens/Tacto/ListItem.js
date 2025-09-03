@@ -15,8 +15,18 @@ export default function ListItem({ data, animales, guardarAnimales }) {
   useEffect(() => {
 
     if (fservicio) {
-      const s = format(new Date(fservicio), 'dd/MM/yy');
-      setServicio(s);
+      try {
+        const fechaServicio = new Date(fservicio);
+        if (!isNaN(fechaServicio.getTime())) {
+          const s = format(fechaServicio, 'dd/MM/yy');
+          setServicio(s);
+        } else {
+          setServicio(' ');
+        }
+      } catch (error) {
+        console.log('Error parsing fservicio date:', fservicio, error);
+        setServicio(' ');
+      }
     } else {
       setServicio(' ')
     }

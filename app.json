@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ar.com.farmerinasd",
+      "bundleIdentifier": "ar.com.farmerin",
       "buildNumber": "45"
     },
     "android": {

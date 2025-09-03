@@ -6,20 +6,11 @@ import { useRoute } from '@react-navigation/core';
 import { MovieContext } from "../Contexto"; // Ajustá el path si es necesario
 
 export default function ListItem({ navigation }) {
-  const [alerta, setAlerta] = useState(false);
   const user = autenticacion.currentUser;
   const { movies } = useContext(MovieContext);
   const [mostrarResumen, setMostrarResumen] = useState(false);
 
-  const deletex = () => {
-    if (user) {
-      user.delete().then(() => {
-        // Usuario eliminado
-      }).catch((error) => {
-        console.log(error);
-      });
-    }
-  };
+
   const obtenerResumenAnimales = () => {
     let vacas = 0;
     let vaquillonas = 0;
@@ -70,49 +61,9 @@ export default function ListItem({ navigation }) {
       </TouchableOpacity>
 
 
-      {/* Botón para eliminar cuenta */}
-      <TouchableHighlight
-        style={styles.botonRojo}
-        underlayColor="#ffdddd"
-        onPress={() => setAlerta(true)}
-      >
-        <Text style={styles.botonRojoTexto}>ELIMINAR CUENTA</Text>
-      </TouchableHighlight>
 
-      {/* Modal de confirmación de eliminación */}
-      <Modal
-        visible={alerta}
-        transparent
-        animationType="fade"
-        onRequestClose={() => { }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>¡ATENCIÓN!</Text>
-            <Text style={styles.modalMessage}>¿DESEA ELIMINAR LA CUENTA?</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#c4c4c4', flex: 1, marginRight: 5 }]}
-                onPress={() => setAlerta(false)}
-              >
-                <Text style={styles.modalButtonText}>CANCELAR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#DD6B55', flex: 1, marginLeft: 5 }]}
-                onPress={() => {
-                  setAlerta(false);
-                  deletex();
-                  AsyncStorage.removeItem('usuario');
-                  AsyncStorage.removeItem('nombre');
-                  navigation.navigate('OnBoarding');
-                }}
-              >
-                <Text style={styles.modalButtonText}>ACEPTAR</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
+
 
       {/* Modal moderno de resumen de animales */}
       <Modal
@@ -181,18 +132,7 @@ const styles = StyleSheet.create({
   botonesContainer: {
     gap: 10,
   },
-  botonRojo: {
-    backgroundColor: '#ffe6e6',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    margin: 20,
-  },
-  botonRojoTexto: {
-    color: '#cc0000',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
+
   botonVerde: {
     backgroundColor: '#e6f9ef',
     padding: 12,
@@ -218,46 +158,7 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 10
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 25,
-    alignItems: 'center',
-    minWidth: 250,
-    elevation: 5,
-    width: 300,
-  },
-  modalTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: 'red',
-    textAlign: 'center',
-  },
-  modalMessage: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#444',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modalButton: {
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-    textAlign: 'center',
-  },
+
   botonResumen: {
     backgroundColor: '#1b829b',
     paddingVertical: 14,
@@ -276,6 +177,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   resumenModal: {
     backgroundColor: '#ffffff',

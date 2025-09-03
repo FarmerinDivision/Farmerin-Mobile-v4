@@ -1,34 +1,33 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, FlatList, TextInput, ScrollView, ActivityIndicator, Image, TouchableHighlight } from 'react-native';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { StyleSheet, Text, View, FlatList, TextInput, ScrollView, ActivityIndicator, Image, TouchableHighlight, TouchableOpacity, Alert } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import DropDownPicker from 'react-native-dropdown-picker';
-
-//import 'expo-firestore-offline-persistence';
-
-
+import { Camera, CameraType, CameraView } from 'expo-camera';
 import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CriaItem from './CriaItem';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Modal from 'react-native-modal';
+import { Modal as NativeModal } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { MovieContext } from "../Contexto"
 import { useRoute } from '@react-navigation/core';
 
 export default ({ navigation }) => {
   const [fecha, setFecha] = useState(new Date());
-  const { movies, setMovies, trata } = useContext(MovieContext)
+  const { movies, setMovies, trata } = useContext(MovieContext);
 
   const route = useRoute();
   const { animal } = route.params;
   const { tambo } = route.params;
-  const [showfecha, setShowFecha] = useState(false);
   const { usuario } = route.params;
+
+  const [showfecha, setShowFecha] = useState(false);
   const [show, setShow] = useState(false);
   const [permisos, setPermisos] = useState(null);
   const [alerta, setAlerta] = useState({
@@ -46,6 +45,8 @@ export default ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [openTipo, setOpenTipo] = useState(false);
   const [openTrat, setOpenTrat] = useState(false);
+  const camRef = useRef(null);
+  const [foto, setFoto] = useState(null);
 
   const [options, setOptions] = useState([
     { value: 'Normal', label: 'NORMAL' },
@@ -56,7 +57,6 @@ export default ({ navigation }) => {
     { value: 'Mala Presentación', label: 'MALA PRESENTACION' },
     { value: 'Mellizos', label: 'MELLIZOS' }
   ]);
-
   const sexoOptions = [
     { value: 'Macho', label: 'MACHO' },
     { value: 'Hembra', label: 'HEMBRA' },
@@ -71,8 +71,31 @@ export default ({ navigation }) => {
 
   useEffect(() => {
     getPermisos();
-  }, [])
+    obtenerTratamientos();
+  }, []);
 
+  async function getPermisos() {
+    try {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setPermisos(status === 'granted');
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'No se puede acceder a la cámara');
+      }
+    } catch (error) {
+      console.log('❌ Error al pedir permisos de cámara:', error);
+      setPermisos(false);
+    }
+  }
+
+
+  function obtenerTratamientos() {
+    const filtrado = trata.filter(e => e.tipo === 'tratamiento');
+    const opciones = filtrado.map(doc => ({
+      value: doc.descripcion,
+      label: doc.descripcion
+    }));
+    setTratamientoOptions(opciones);
+  }
 
   const formParto = useFormik({
     initialValues: {
@@ -86,7 +109,6 @@ export default ({ navigation }) => {
 
   const validate = values => {
     const errors = {}
-
     if ((values.sexo != 'Macho' && values.sexo != 'Hembra') && !values.foto) {
       errors.foto = "DEBE TOMAR UNA FOTO"
     }
@@ -96,14 +118,13 @@ export default ({ navigation }) => {
     if (isNaN(values.peso)) {
       errors.peso = "REVISE EL PESO DE LA CRIA"
     }
-
     return errors
   }
 
   const formCria = useFormik({
     initialValues: {
       rp: '',
-      sexo: 'Macho',
+      sexo: 'Hembra',
       peso: '',
       tratamiento: 'Calostro Madre',
       foto: '',
@@ -111,7 +132,7 @@ export default ({ navigation }) => {
     },
     validate,
     onSubmit: datos => guardarCria(datos)
-  })
+  });
 
   useEffect(() => {
 
@@ -128,11 +149,10 @@ export default ({ navigation }) => {
     setTratamientoOptions(opciones);
   }
 
-
   function cerrar() {
-    //limpio el form
     formCria.setFieldValue('rp', '');
-    formCria.setFieldValue('sexo', 'Macho');
+    formCria.setFieldValue('sexo', 'Hembra');
+    setValueSexo('Hembra');
     formCria.setFieldValue('peso', '');
     formCria.setFieldValue('tratamiento', 'Calostro Madre');
     formCria.setFieldValue('foto', '');
@@ -144,12 +164,13 @@ export default ({ navigation }) => {
     setPermisos(true);
   }
 
+
   function eliminarFoto() {
     formCria.setFieldValue('foto', '');
   }
 
   async function guardar(datos) {
-
+    console.log('DEBUG guardar() - inicio', { datos, fechaState: fecha, criaState: cria });
     //Formatea fecha 
     const tipof = typeof datos.fecha;
     let fstring;
@@ -159,15 +180,17 @@ export default ({ navigation }) => {
       fstring = (parts[2]) + '-' + (parts[1]) + '-' + parts[0];
       let fs = fstring + 'T04:00:00';
       fdate = new Date(fs);
+      console.log('DEBUG guardar() - fecha string', { datosFecha: datos.fecha, fstring, fdate });
     } else {
       fstring = format(fecha, 'yyyy-MM-dd');
       fdate = datos.fecha;
-
+      console.log('DEBUG guardar() - fecha Date', { fechaState: fecha, fstring, fdate });
     }
 
 
     let detalle = datos.tipo + ' /Trat: ' + datos.tratamiento + ' /Obs.: ' + datos.obs + '\n';
     if (cria.length == 0) {
+      console.log('DEBUG guardar() - validación falla: no hay crías');
       setAlerta({
         show: true,
         titulo: 'Error!',
@@ -177,6 +200,7 @@ export default ({ navigation }) => {
 
     } else {
       if (cria.length == 2 && datos.tipo != 'Mellizos') {
+        console.log('DEBUG guardar() - validación falla: hay 2 crías pero tipo no es Mellizos', { tipo: datos.tipo, cantidadCrias: cria.length });
         setAlerta({
           show: true,
           titulo: 'Error!',
@@ -184,6 +208,7 @@ export default ({ navigation }) => {
           color: '#DD6B55'
         });
       } else if (cria.length != 2 && datos.tipo == 'Mellizos') {
+        console.log('DEBUG guardar() - validación falla: tipo Mellizos pero cantidad != 2', { tipo: datos.tipo, cantidadCrias: cria.length });
         setAlerta({
           show: true,
           titulo: 'Error!',
@@ -197,6 +222,7 @@ export default ({ navigation }) => {
         let an;
         let hayError = false;
         let crias = [];
+        console.log('DEBUG guardar() - comenzando registro de crías', { crías: cria, tipoParto: datos.tipo });
 
         //for (const c of cria) {
         cria.forEach(async c => {
@@ -252,6 +278,7 @@ export default ({ navigation }) => {
               observaciones: obs,
             }
           }
+          console.log('DEBUG guardar() - cría preparada', { base, an, cria: c });
 
 
           try {
@@ -265,19 +292,22 @@ export default ({ navigation }) => {
               const rutaRelativa = c.foto.substring(posicionUltimaBarra + "/".length, c.foto.length);
               nombreFoto = rutaRelativa;
             }
+            console.log('DEBUG guardar() - foto cría', { tieneFoto: !!c.foto, nombreFoto });
 
             crias.push({
               id: c.id,
               rp: c.rp,
               sexo: c.sexo,
               peso: c.peso,
-              trat: c.trat,
+              trat: c.tratamiento,
               foto: nombreFoto,
               obs: obs,
             });
+            console.log('DEBUG guardar() - acumuladas crías para evento', { crias });
 
             //insertar cria en base de datos
-            firebase.db.collection(base).add(an);
+            const addRes = await firebase.db.collection(base).add(an);
+            console.log('DEBUG guardar() - cría insertada en BD', { base, docId: addRes && addRes.id });
             //Si tiene foto la almacena
             if (c.foto) {
               //configura el lugar de almacenamiento
@@ -287,11 +317,13 @@ export default ({ navigation }) => {
               const response = await fetch(c.foto);
               const blob = await response.blob();
               //sube el archivo
-              archivoRef.put(blob);
+              await archivoRef.put(blob);
+              console.log('DEBUG guardar() - foto subida a storage', { path: tambo.id + '/crias/' + nombreFoto });
             }
 
           } catch (error) {
             hayError = true;
+            console.error('ERROR guardar() - registrando cría', error);
             setAlerta({
               show: true,
               titulo: 'Error!',
@@ -321,6 +353,7 @@ export default ({ navigation }) => {
             categoria: cat,
             nservicio: 0
           }
+          console.log('DEBUG guardar() - actualizando animal y creando evento', { animalId: animal.id, update: an, detalle, criasEvento: crias });
 
           try {
             let objIndex = movies.findIndex((obj => obj.id == animal.id));
@@ -329,14 +362,16 @@ export default ({ navigation }) => {
             const nuevo = Object.assign({}, obj, an)
             copia[objIndex] = nuevo
             setMovies(copia)
-            firebase.db.collection('animal').doc(animal.id).update(an);
-            firebase.db.collection('animal').doc(animal.id).collection('eventos').add({
+            await firebase.db.collection('animal').doc(animal.id).update(an);
+            console.log('DEBUG guardar() - animal actualizado en BD', { animalId: animal.id });
+            const eventoRes = await firebase.db.collection('animal').doc(animal.id).collection('eventos').add({
               fecha: fecha,
               tipo: 'Parto',
               detalle: detalle,
               crias: crias,
               usuario: usuario
             })
+            console.log('DEBUG guardar() - evento de parto creado', { eventoId: eventoRes && eventoRes.id });
             setAlerta({
               show: true,
               titulo: 'Atención!',
@@ -346,6 +381,7 @@ export default ({ navigation }) => {
             });
 
           } catch (error) {
+            console.error('ERROR guardar() - actualizando animal o creando evento', error);
             setAlerta({
               show: true,
               titulo: 'Error!',
@@ -360,6 +396,7 @@ export default ({ navigation }) => {
   }
 
   async function guardarCria(datos) {
+    console.log('DEBUG guardarCria() - inicio', { datos });
     setLoading(true);
     let errores = false;
     let descerror = '';
@@ -369,7 +406,7 @@ export default ({ navigation }) => {
       id: iden.toString(),
       rp: datos.rp,
       peso: datos.peso,
-      sexo: datos.sexo,
+      sexo: datos.sexo || 'Hembra',
       tratamiento: datos.tratamiento,
       foto: datos.foto,
       obs: datos.obs,
@@ -390,6 +427,7 @@ export default ({ navigation }) => {
     });
     //}
     if (errores) {
+      console.log('DEBUG guardarCria() - validación RP duplicado', { descerror });
       setAlerta({
         show: true,
         titulo: 'Error!',
@@ -399,12 +437,14 @@ export default ({ navigation }) => {
       setLoading(false);
     } else {
       setCria(cria => [...cria, c]);
+      console.log('DEBUG guardarCria() - cría agregada a estado', { criaAgregada: c });
       setLoading(false);
       setModal(false);
     }
     //limpio el form
     formCria.setFieldValue('rp', '');
-    formCria.setFieldValue('sexo', 'Macho');
+    formCria.setFieldValue('sexo', 'Hembra');
+    setValueSexo('Hembra');
     formCria.setFieldValue('peso', '');
     formCria.setFieldValue('tratamiento', '');
     formCria.setFieldValue('foto', '');
@@ -412,6 +452,7 @@ export default ({ navigation }) => {
 
   }
   function cambiarFecha(event, date) {
+    console.log('DEBUG cambiarFecha()', { eventType: event && event.type, date });
     const currentDate = date;
     setShowFecha(false);
     setFecha(currentDate);
@@ -428,10 +469,10 @@ export default ({ navigation }) => {
   const containerCriaCalostro = { zIndex: 1000 };
 
   const [openSexo, setOpenSexo] = useState(false);
-  const [valueSexo, setValueSexo] = useState(formCria.values.sexo);
+  const [valueSexo, setValueSexo] = useState('Hembra');
   const [itemsSexo, setItemsSexo] = useState([
-    { value: 'Macho', label: 'MACHO' },
     { value: 'Hembra', label: 'HEMBRA' },
+    { value: 'Macho', label: 'MACHO' },
     { value: 'Macho Muerto', label: 'MACHO MUERTO' },
     { value: 'Hembra Muerta', label: 'HEMBRA MUERTA' },
   ]);
@@ -442,19 +483,54 @@ export default ({ navigation }) => {
     { value: 'Calostro Madre', label: 'CALOSTRO MADRE' },
     { value: 'Calostro Congelado', label: 'CALOSTRO CONGELADO' },
   ]);
+  const tomarFoto = async () => {
+    console.log('📸 Intentando tomar foto...');
+    if (camRef.current) {
+      try {
+        let photo;
+        if (camRef.current.takePictureAsync) {
+          photo = await camRef.current.takePictureAsync({ quality: 0.7 });
+        } else if (camRef.current.takePhotoAsync) {
+          photo = await camRef.current.takePhotoAsync({ quality: 0.7 });
+        } else if (camRef.current.takePhoto) {
+          photo = await camRef.current.takePhoto({ quality: 0.7 });
+        } else {
+          throw new Error('API de captura no disponible en camRef');
+        }
+        const uri = photo?.uri || photo?.path || null;
+        if (uri) {
+          setFoto(uri);
+          formCria.setFieldValue('foto', uri);
+        }
+        setShow(false);
+      } catch (error) {
+        console.log('❌ Error al tomar la foto:', error);
+        Alert.alert('Error', 'No se pudo tomar la foto.');
+      }
+    }
+  };
+
+  // 📸 Detectar cámara compatible como en RegistrarRecepcion
+  const cameraBackType = (CameraType && CameraType.back)
+    || (Camera && Camera.Constants && Camera.Constants.Type && Camera.Constants.Type.back)
+    || 'back';
+
+  const CameraComponent = CameraView || Camera;
 
   return (
     <View style={styles.container}>
-      <InfoAnimal
-        animal={animal}
-      />
+      <InfoAnimal animal={animal} />
+
       <View style={styles.form}>
         <ScrollView>
           <Text style={styles.texto}>FECHA:</Text>
-          <TouchableHighlight style={styles.calendario} onPress={handlever}>
-            <View
 
-            ><Text style={styles.textocalendar}>{texto}</Text></View></TouchableHighlight>
+          <TouchableHighlight style={styles.calendario} onPress={handlever}>
+            <View>
+              <Text style={styles.textocalendar}>{texto}</Text>
+            </View>
+          </TouchableHighlight>
+
           {showfecha && (
             <DateTimePicker
               placeholder="Fecha"
@@ -472,9 +548,11 @@ export default ({ navigation }) => {
                   backgroundColor: 'white',
                   borderColor: 'grey',
                   borderWidth: 1,
-                }
+                },
               }}
-            />)}
+            />
+          )}
+
           <View style={containerStyle}>
             <Text style={styles.texto}>TIPO:</Text>
             <DropDownPicker
@@ -483,27 +561,36 @@ export default ({ navigation }) => {
               items={options}
               setOpen={setOpenTipo}
               setItems={setOptions}
-              onChangeValue={value => formParto.setFieldValue('tipo', value)}
+              setValue={(valOrFn) => {
+                const next = typeof valOrFn === 'function' ? valOrFn(formParto.values.tipo) : valOrFn;
+                formParto.setFieldValue('tipo', next);
+              }}
+              onChangeValue={(value) => formParto.setFieldValue('tipo', value)}
               placeholder="Seleccionar tipo"
               zIndex={2000}
               zIndexInverse={1000}
             />
           </View>
+
           <View style={containerStyle2}>
             <Text style={styles.texto}>TRATAMIENTO:</Text>
             <DropDownPicker
               open={openTrat}
               value={formParto.values.tratamiento}
-                items={tratamientoOptions}
+              items={tratamientoOptions}
               setOpen={setOpenTrat}
-              setValue={value => formParto.setFieldValue('tratamiento', value())}
               setItems={setTratamientoOptions}
-              onChangeValue={value => formParto.setFieldValue('tratamiento', value)}
+              setValue={(valOrFn) => {
+                const next = typeof valOrFn === 'function' ? valOrFn(formParto.values.tratamiento) : valOrFn;
+                formParto.setFieldValue('tratamiento', next);
+              }}
+              onChangeValue={(value) => formParto.setFieldValue('tratamiento', value)}
               placeholder="Seleccionar tratamiento"
               zIndex={1000}
               zIndexInverse={2000}
             />
           </View>
+
           <View>
             <Text style={styles.texto}>OBSERVACIONES:</Text>
             <TextInput
@@ -512,67 +599,46 @@ export default ({ navigation }) => {
               value={formParto.values.obs}
             />
           </View>
+
           <Text></Text>
-          {cria.length < 2 &&
+
+          {cria.length < 2 && (
             <Button
               title="  AGREGAR CRIA"
-              icon={
-                <Icon
-                  name="plus-square"
-                  size={35}
-                  color="#3390FF"
-                />
-              }
+              icon={<Icon name="plus-square" size={35} color="#3390FF" />}
               type="outline"
               onPress={() => cerrar()}
             />
-          }
+          )}
 
-          {cria.length != 0 &&
+          {cria.length != 0 && (
             <>
               <Text style={styles.texto}>CRIAS:</Text>
               <FlatList
                 data={cria}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <CriaItem
-                    data={item}
-                    cria={cria}
-                    setCria={setCria}
-                  />
-                )
-                }
+                  <CriaItem data={item} cria={cria} setCria={setCria} />
+                )}
                 ItemSeparatorComponent={() => <Separator />}
               />
             </>
-
-          }
+          )}
         </ScrollView>
       </View>
+
       <Button
         title="  ACEPTAR"
-        icon={
-          <Icon
-            name="check-square"
-            size={35}
-            color="white"
-          />
-        }
-        onPress={
-          formParto.handleSubmit}
+        icon={<Icon name="check-square" size={35} color="white" />}
+        onPress={formParto.handleSubmit}
       />
 
-      <Modal
-        animationType='fade'
-        transparent={true}
-        visible={modal}
-      >
-        {loading ?
-          <ActivityIndicator size="large" color='#1b829b' />
-          :
+      <Modal animationType="fade" transparent={true} visible={modal}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#1b829b" />
+        ) : (
           <View style={styles.center}>
             <View style={styles.content}>
-
               <ScrollView>
                 <View>
                   <View style={styles.columnas}>
@@ -583,26 +649,19 @@ export default ({ navigation }) => {
                       <Button
                         onPress={() => setModal(false)}
                         type="clear"
-                        icon={
-                          <Icon
-                            name="window-close"
-                            size={30}
-                            color="#3390FF"
-                          />
-                        }
+                        icon={<Icon name="window-close" size={30} color="#3390FF" />}
                       />
                     </View>
                   </View>
 
                   <Text style={styles.texto}>SEXO:</Text>
-
                   <View style={{ zIndex: 2000 }}>
                     <DropDownPicker
                       open={openSexo}
                       value={valueSexo}
                       items={itemsSexo}
                       setOpen={setOpenSexo}
-                      setValue={callback => {
+                      setValue={(callback) => {
                         const val = callback();
                         setValueSexo(val);
                         formCria.setFieldValue('sexo', val);
@@ -613,12 +672,15 @@ export default ({ navigation }) => {
                       zIndexInverse={1000}
                     />
                   </View>
+
                   <Text style={styles.texto}>RP:</Text>
                   <TextInput
                     style={styles.entrada}
                     onChangeText={formCria.handleChange('rp')}
                   />
-                  {formCria.errors.rp ? <Text style={styles.error}>{formCria.errors.rp}</Text> : null}
+                  {formCria.errors.rp ? (
+                    <Text style={styles.error}>{formCria.errors.rp}</Text>
+                  ) : null}
 
                   <Text style={styles.texto}>PESO:</Text>
                   <TextInput
@@ -626,16 +688,18 @@ export default ({ navigation }) => {
                     onChangeText={formCria.handleChange('peso')}
                     keyboardType="numeric"
                   />
-                  {formCria.errors.peso ? <Text style={styles.error}>{formCria.errors.peso}</Text> : null}
-                  <Text style={styles.texto}>CALOSTRO:</Text>
+                  {formCria.errors.peso ? (
+                    <Text style={styles.error}>{formCria.errors.peso}</Text>
+                  ) : null}
 
+                  <Text style={styles.texto}>CALOSTRO:</Text>
                   <View style={{ zIndex: 1000 }}>
                     <DropDownPicker
                       open={openCalostro}
                       value={valueCalostro}
                       items={itemsCalostro}
                       setOpen={setOpenCalostro}
-                      setValue={callback => {
+                      setValue={(callback) => {
                         const val = callback();
                         setValueCalostro(val);
                         formCria.setFieldValue('tratamiento', val);
@@ -647,6 +711,7 @@ export default ({ navigation }) => {
                     />
                   </View>
                 </View>
+
                 <View>
                   <Text style={styles.texto}>OBSERVACIONES:</Text>
                   <TextInput
@@ -655,22 +720,18 @@ export default ({ navigation }) => {
                     value={formCria.values.obs}
                   />
                 </View>
+
                 <Text></Text>
+
                 <View style={styles.foto}>
-                  {!formCria.values.foto ?
+                  {!formCria.values.foto ? (
                     <Button
                       title="  TOMAR FOTO"
-                      icon={
-                        <Icon
-                          name="camera"
-                          size={35}
-                          color="#3390FF"
-                        />
-                      }
+                      icon={<Icon name="camera" size={35} color="#3390FF" />}
                       type="outline"
                       onPress={() => setShow(true)}
                     />
-                    :
+                  ) : (
                     <>
                       <View style={styles.vistaMiniatura}>
                         <Image
@@ -680,44 +741,80 @@ export default ({ navigation }) => {
                       </View>
                       <Button
                         title="  ELIMINAR FOTO"
-                        icon={
-                          <Icon
-                            name="trash"
-                            size={35}
-                            color="#3390FF"
-                          />
-                        }
+                        icon={<Icon name="trash" size={35} color="#3390FF" />}
                         type="outline"
                         onPress={() => eliminarFoto()}
                       />
                     </>
-                  }
-
+                  )}
                 </View>
-                {formCria.errors.foto ? <Text style={styles.error}>{formCria.errors.foto}</Text> : null}
+
+                {formCria.errors.foto ? (
+                  <Text style={styles.error}>{formCria.errors.foto}</Text>
+                ) : null}
+
                 <Text></Text>
-
-
-
               </ScrollView>
+
               <Button
                 title="  ACEPTAR"
                 style={styles.boton}
-                icon={
-                  <Icon
-                    name="check-square"
-                    size={35}
-                    color="white"
-                  />
-                }
+                icon={<Icon name="check-square" size={35} color="white" />}
                 onPress={formCria.handleSubmit}
               />
+
               <Text></Text>
             </View>
-
           </View>
-        }
+        )}
+
+        {/* Modal de Cámara */}
+        <NativeModal visible={show} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShow(false)}>
+          {!permisos ? (
+            <View
+              style={[styles.camara, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+              <Text style={{ color: '#fff' }}>
+                No hay permisos para usar la cámara
+              </Text>
+            </View>
+          ) : CameraComponent ? (
+            CameraView ? (
+              <CameraView
+                style={styles.camara}
+                facing={cameraBackType}
+                ref={camRef}
+              />
+            ) : (
+              <Camera style={styles.camara} type={cameraBackType} ref={camRef} />
+            )
+          ) : (
+            <View
+              style={[styles.camara, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+              <Text style={{ color: '#fff' }}>Cámara no disponible</Text>
+            </View>
+          )}
+
+          <View style={styles.botoneraCamara}>
+            <TouchableOpacity
+              style={styles.botonCamara}
+              onPress={() => {
+                console.log('📸 Cierre manual del modal de cámara');
+                setShow(false);
+              }}
+            >
+              <Text style={styles.botonTexto}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.botonCamara} onPress={tomarFoto}>
+              <Text style={styles.botonTexto}>Tomar Foto</Text>
+            </TouchableOpacity>
+          </View>
+
+
+        </NativeModal>
       </Modal>
+      {/* Modal de Alerta - estilo igual a RegistrarTratamiento */}
       {alerta.show && (
         <Modal
           isVisible={alerta.show}
@@ -731,9 +828,7 @@ export default ({ navigation }) => {
               title="ACEPTAR"
               onPress={() => {
                 setAlerta({ ...alerta, show: false });
-                if (alerta.vuelve) {
-                  navigation.popToTop();
-                }
+                if (alerta.vuelve) navigation.goBack();
               }}
               buttonStyle={{ backgroundColor: alerta.color, marginTop: 10 }}
             />
@@ -741,10 +836,12 @@ export default ({ navigation }) => {
         </Modal>
       )}
 
-    </View >
+    </View>
   );
+
 }
-const Separator = () => <View style={{ flex: 1, height: 1, backgroundColor: '#399dad' }}></View>
+
+const Separator = () => <View style={{ flex: 1, height: 1, backgroundColor: '#399dad' }}></View>;
 
 const styles = StyleSheet.create({
   container: {
@@ -848,6 +945,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
 
   },
+  alertaModal: {
+    margin: 0,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   columnas: {
     flex: 1,
     flexDirection: 'row'
@@ -860,8 +962,25 @@ const styles = StyleSheet.create({
     flex: 3,
   },
   camara: {
-    marginTop: 20,
-    flex: 5
+    flex: 1
+  },
+  modalCamara: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  botoneraCamara: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 20,
+    backgroundColor: '#111',
+  },
+  botonCamara: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+  },
+  botonTexto: {
+    fontWeight: 'bold',
   },
   miniatura: {
     width: 200,
@@ -916,7 +1035,65 @@ const styles = StyleSheet.create({
       top: 10,
       right: 10,
     },
+    
+
+    alertaContainer: {
+      backgroundColor: '#fff',
+      padding: 25,
+      borderRadius: 16,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25,
+      shadowRadius: 16,
+      elevation: 10,
+      borderWidth: 1,
+      borderColor: '#F3F4F6'
+    },
+    alertaContainerSuccess: {
+      borderColor: '#A7F3D0',
+      backgroundColor: '#ECFDF5'
+    },
+    alertaTitulo: {
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 8,
+      color: '#111827',
+    },
+    alertaTituloSuccess: {
+      color: '#065F46'
+    },
+    alertaMensaje: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginBottom: 20,
+      color: '#374151',
+      paddingHorizontal: 8
+    },
+    alertaBoton: {
+      backgroundColor: '#1b829b',
+      paddingVertical: 12,
+      paddingHorizontal: 22,
+      borderRadius: 10,
+    },
+    alertaBotonSuccess: {
+      backgroundColor: '#10B981'
+    },
+    alertaBotonTexto: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    alertaIconWrapperSuccess: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: '#D1FAE5',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+
 
   }
-
 });

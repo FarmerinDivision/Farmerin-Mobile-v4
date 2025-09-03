@@ -134,28 +134,7 @@ export default function App({ setShowTambos, showTambos, selectTambo }) {
         </View>
 
       </Modal>
-      {alerta && (
-  <Modal
-    isVisible={!!alerta}
-    onBackdropPress={() => setAlerta(false)}
-    onBackButtonPress={() => setAlerta(false)}
-  >
-    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
-      <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
-      <Text style={{ marginVertical: 10 }}>¿DESEA ELIMINAR LA CUENTA?</Text>
-      <Button
-        title="ACEPTAR"
-        onPress={() => setAlerta(false)}
-        buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
-      />
-      <Button
-        title="CANCELAR"
-        onPress={() => setAlerta(false)}
-        buttonStyle={{ backgroundColor: '#c4c4c4', marginTop: 10 }}
-      />
-    </View>
-  </Modal>
-)}
+
     </>
 
   );

@@ -5,6 +5,7 @@ import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import DropDownPicker from 'react-native-dropdown-picker';
 //import 'expo-firestore-offline-persistence';
 
 
@@ -12,7 +13,6 @@ import firebase from '../../database/firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { format } from 'date-fns';
 import Modal from 'react-native-modal';
-import RNPickerSelect from 'react-native-picker-select';
 import { MovieContext } from "../Contexto";
 import { useRoute } from '@react-navigation/core';
 
@@ -23,11 +23,15 @@ export default function RegistroAborto({ navigation }) {
   const { animal, usuario } = route.params;
 
   const [show, setShow] = useState(false);
-  const [tratamientoOptions, setTratamientoOptios] = useState([{ value: '-', label: '' }]);
+  const [tratamientoOptions, setTratamientoOptions] = useState([]);
   const [options, setOptions] = useState([
     { value: 'Aborto', label: 'ABORTO' },
     { value: 'Aborto inicia lactancia', label: 'ABORTO INICIA LACTANCIA' },
   ]);
+  
+  // Estados para DropDownPicker
+  const [openTipo, setOpenTipo] = useState(false);
+  const [openTratamiento, setOpenTratamiento] = useState(false);
   const [alerta, setAlerta] = useState({
     show: false,
     titulo: '',
@@ -63,7 +67,7 @@ export default function RegistroAborto({ navigation }) {
     initialValues: {
       fecha: new Date(),
       tipo: 'Aborto inicia lactancia',
-      tratamiento: '',
+      tratamiento: '-',
     },
     onSubmit: async (values) => {
       try {
@@ -99,12 +103,14 @@ export default function RegistroAborto({ navigation }) {
 
   const obtenerTratamientos = () => {
     const filtrado = trata.filter(e => e.tipo === "tratamiento");
-    const nuevosTratamientos = filtrado.map(doc => ({
-      key: doc.descripcion,
-      value: doc.descripcion,
-      label: doc.descripcion,
-    }));
-    setTratamientoOptios(prev => [...prev, ...nuevosTratamientos]);
+    const nuevosTratamientos = [
+      { value: '-', label: 'Sin tratamiento' },
+      ...filtrado.map(doc => ({
+        value: doc.descripcion,
+        label: doc.descripcion,
+      }))
+    ];
+    setTratamientoOptions(nuevosTratamientos);
   };
 
   const formatFecha = (fecha) => {
@@ -168,21 +174,57 @@ export default function RegistroAborto({ navigation }) {
           />
         )}
         <Text style={styles.texto}>TIPO:</Text>
-        <RNPickerSelect
-          items={options}
-          onValueChange={formAborto.handleChange('tipo')}
-          value={formAborto.values.tipo}
-          placeholder={{}}
-          style={styles.pickerStyle}
-        />
+        <View style={{ zIndex: 2000, marginBottom: 15 }}>
+          <DropDownPicker
+            open={openTipo}
+            value={formAborto.values.tipo}
+            items={options}
+            setOpen={setOpenTipo}
+            setItems={setOptions}
+            setValue={callback => {
+              const val = callback();
+              formAborto.setFieldValue('tipo', val);
+            }}
+            placeholder="Seleccionar tipo"
+            zIndex={2000}
+            zIndexInverse={1000}
+            style={{
+              borderColor: '#d0d0d0',
+              borderRadius: 12,
+              backgroundColor: '#ffffff',
+            }}
+            dropDownContainerStyle={{
+              borderColor: '#d0d0d0',
+              backgroundColor: '#ffffff',
+            }}
+          />
+        </View>
         <Text style={styles.texto}>TRATAMIENTO:</Text>
-        <RNPickerSelect
-          items={tratamientoOptions}
-          onValueChange={formAborto.handleChange('tratamiento')}
-          value={formAborto.values.tratamiento}
-          placeholder={{}}
-          style={styles.pickerStyle}
-        />
+        <View style={{ zIndex: 1000, marginBottom: 15 }}>
+          <DropDownPicker
+            open={openTratamiento}
+            value={formAborto.values.tratamiento}
+            items={tratamientoOptions}
+            setOpen={setOpenTratamiento}
+            setItems={setTratamientoOptions}
+            setValue={callback => {
+              const val = callback();
+              formAborto.setFieldValue('tratamiento', val);
+            }}
+            placeholder="Seleccionar tratamiento"
+            zIndex={1000}
+            zIndexInverse={2000}
+            style={{
+              borderColor: '#d0d0d0',
+              borderRadius: 12,
+              backgroundColor: '#ffffff',
+            }}
+            dropDownContainerStyle={{
+              borderColor: '#d0d0d0',
+              backgroundColor: '#ffffff',
+            }}
+          />
+        </View>
       </View>
       <Button
         title="ACEPTAR"
@@ -257,43 +299,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  pickerStyle: {
-    inputIOS: {
-      backgroundColor: '#ffffff',
-      borderRadius: 12,
-      height: 50,
-      borderColor: '#d0d0d0',
-      borderWidth: 1,
-      paddingHorizontal: 15,
-      color: '#333',
-      fontSize: 16,
-      marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 3,
-    },
-    inputAndroid: {
-      backgroundColor: '#ffffff',
-      borderRadius: 12,
-      height: 50,
-      borderColor: '#d0d0d0',
-      borderWidth: 1,
-      paddingHorizontal: 15,
-      color: '#333',
-      fontSize: 16,
-      marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 3,
-    },
-    placeholder: {
-      color: '#9B9B9B',
-    },
-  },
+
   button: {
     backgroundColor: '#007BFF',
     borderRadius: 8,
