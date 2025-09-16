@@ -5,29 +5,38 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "NPM_FLAGS": "--legacy-peer-deps"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "NPM_FLAGS": "--legacy-peer-deps"
       }
     },
     "production": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "NPM_FLAGS": "--legacy-peer-deps"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-      "appleId": "rey.leandroe@gmail.com",
-      "ascAppId": "HQJ3UVB9BW",
-      "appleTeamId": "UT85CB823B",
-      "sku":"FarmerinApp",
-      "ascApiKeyId":"31c569e1-9f63-46fe-8f42-e24a30c038ea"
+        "appleId": "rey.leandroe@gmail.com",
+        "ascAppId": "HQJ3UVB9BW",
+        "appleTeamId": "UT85CB823B",
+        "sku": "FarmerinApp",
+        "ascApiKeyId": "31c569e1-9f63-46fe-8f42-e24a30c038ea"
       }
     }
   }

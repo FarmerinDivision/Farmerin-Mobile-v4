@@ -74,8 +74,9 @@ export default function AnimalListScreen({ navigation }) {
   };
 
   async function secarAnimales() {
-    let e = false;
+    let huboError = false;
     let haySecado = false;
+    const errores = [];
 
     for (const a of animales) {
       if (a.secar) {
@@ -95,28 +96,41 @@ export default function AnimalListScreen({ navigation }) {
             usuario: usuario,
           });
         } catch (error) {
-          e = true;
-          setAlerta({
-            show: true,
-            titulo: '¡ERROR!',
-            mensaje: `NO SE PUEDE SECAR EL RP: ${a.rp}`,
-            color: '#DD6B55',
-          });
+          huboError = true;
+          errores.push(a.rp);
         }
       }
     }
 
-    if (!e && haySecado) {
+    if (!haySecado) {
       setAlerta({
         show: true,
         titulo: '¡ATENCIÓN!',
-        mensaje: 'ANIMALES SECADOS CON ÉXITO',
-        color: '#3AD577',
-        vuelve: true,
+        mensaje: 'Seleccione al menos un animal para secar.',
+        color: '#DD6B55',
+        vuelve: false,
       });
-    } else {
-      navigation.popToTop();
+      return;
     }
+
+    if (huboError) {
+      setAlerta({
+        show: true,
+        titulo: '¡ERROR!',
+        mensaje: `No se pudieron secar los RP: ${errores.join(', ')}`,
+        color: '#DD6B55',
+        vuelve: false,
+      });
+      return;
+    }
+
+    setAlerta({
+      show: true,
+      titulo: '¡ATENCIÓN!',
+      mensaje: 'ANIMALES SECADOS CON ÉXITO',
+      color: '#3AD577',
+      vuelve: true,
+    });
   }
 
   return (

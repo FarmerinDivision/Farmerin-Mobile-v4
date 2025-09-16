@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 
 import firebase from '../../database/firebase';
+import { db } from '../../database/firebase';
 import ListItem from './ListItem';
 import Modal from 'react-native-modal';
 import VerInfo from "./VerInfo";
@@ -18,7 +19,7 @@ export default ({ navigation }) => {
   const {tambo} = route.params;
   
   const [loading, setLoading] = useState(false);
-  const [producciones, setProducciones] = useState('');
+  const [producciones, setProducciones] = useState([]);
   const [showTambos, setShowTambos] = useState(false);
   const [seleccionado, setSeleccionado] = useState({});
   const [alerta, setAlerta] = useState({
@@ -29,27 +30,31 @@ export default ({ navigation }) => {
   });
 
   useEffect(() => {
+    setLoading(true);
+    const ref = db
+      .collection('tambo')
+      .doc(tambo.id)
+      .collection('produccion')
+      .orderBy('fecha', 'desc')
+      .limit(30);
 
-    //busca los animales que no sean rechazados
-    obtenerProduccion();
+    const unsubscribe = ref.onSnapshot(snapshotProduccion, (error) => {
+      setAlerta({
+        show: true,
+        titulo: '¡ERROR!',
+        mensaje: `NO SE PUEDE OBTENER LA PRODUCCIÓN${error?.message ? `: ${error.message}` : ''}`,
+        color: '#DD6B55'
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
 
 
 
-  function obtenerProduccion() {
-    setLoading(true);
-    try {
-      firebase.db.collection('tambo').doc(tambo.id).collection('produccion').orderBy('fecha', 'desc').limit(30).get().then(snapshotProduccion)
-    } catch (error) {
-      setAlerta({
-        show: true,
-        titulo: '¡ERROR!',
-        mensaje: 'NO SE PUEDE OBTENER LA PRODUCCIÓN',
-        color: '#DD6B55'
-      });
-    }
-  }
+  // Mantengo la función anterior eliminada a favor de onSnapshot en tiempo real
 
 
   function snapshotProduccion(snapshot) {
@@ -65,16 +70,25 @@ export default ({ navigation }) => {
   }
   
 
-  function eliminarProduccion(produccion) {
+  async function eliminarProduccion(produccion) {
     try {
+      if (!tambo || !tambo.id) {
+        throw new Error('ID de tambo inválido');
+      }
+      if (!produccion || !produccion.id) {
+        throw new Error('ID de producción inválido');
+      }
+
       const idProd = produccion.id;
-      firebase.db.collection('tambo').doc(tambo.id).collection('produccion').doc(idProd).delete();
-      const pr = producciones.filter(p => {
-        return (
-          p.id != idProd
-        )
-      });
-      setProducciones(pr);
+      const ref = db
+        .collection('tambo')
+        .doc(tambo.id)
+        .collection('produccion')
+        .doc(idProd);
+      await ref.delete();
+
+      // La lista se actualiza sola por onSnapshot
+
       setAlerta({
         show: true,
         titulo: '¡ATENCIÓN!',
@@ -82,14 +96,14 @@ export default ({ navigation }) => {
         color: '#3AD577'
       });
     } catch (error) {
+      console.error('Error eliminando producción:', error);
       setAlerta({
         show: true,
         titulo: '¡ERROR!',
-        mensaje: 'AL ELIMINAR LA PRODUCCIÓN',
+        mensaje: `AL ELIMINAR LA PRODUCCIÓN${error?.message ? `: ${error.message}` : ''}`,
         color: '#DD6B55'
       });
     }
-
   }
 
 

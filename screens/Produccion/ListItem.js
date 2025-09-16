@@ -5,11 +5,11 @@ import { Button } from 'react-native-elements';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-export default function ListItem({ data,eliminarProduccion, info}) {
+export default function ListItem({ data, eliminarProduccion, info }) {
 
   const { id, fecha,produccion } = data;
   const [fechaProd,setFechaProd]=useState('');
-  const [alerta, setAlerta] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     const f = new Date(fecha.toDate());
@@ -19,8 +19,8 @@ export default function ListItem({ data,eliminarProduccion, info}) {
   }, []);
  
 
-  const confirmar = ()=>{
-    setAlerta(true)
+  const confirmar = () => {
+    setShowConfirm(true);
   }
   return (
     <>
@@ -42,20 +42,27 @@ export default function ListItem({ data,eliminarProduccion, info}) {
       </View>
     </TouchableOpacity>
 
-    {alerta && (
+    {showConfirm && (
       <Modal
-        isVisible={!!alerta}
-        onBackdropPress={() => setAlerta(false)}
-        onBackButtonPress={() => setAlerta(false)}
+        isVisible={showConfirm}
+        onBackdropPress={() => setShowConfirm(false)}
+        onBackButtonPress={() => setShowConfirm(false)}
       >
         <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: 'red' }}>¡ATENCIÓN!</Text>
-          <Text style={{ marginVertical: 10 }}>{alerta}</Text>
-          <Button
-            title="ACEPTAR"
-            onPress={() => setAlerta(false)}
-            buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10 }}
-          />
+          <Text style={{ marginVertical: 10 }}>¿Desea eliminar esta producción?</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <Button
+              title="CANCELAR"
+              type="clear"
+              onPress={() => setShowConfirm(false)}
+            />
+            <Button
+              title="ELIMINAR"
+              onPress={() => { setShowConfirm(false); eliminarProduccion(); }}
+              buttonStyle={{ backgroundColor: '#DD6B55', marginTop: 10, marginLeft: 10 }}
+            />
+          </View>
         </View>
       </Modal>
     )}
