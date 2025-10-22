@@ -271,6 +271,7 @@ export default ({ navigation }) => {
       mbaja: '',
       rodeo: 0,
       sugerido: 0,
+      grupo: 0,
       porcentaje: 1
     }
 

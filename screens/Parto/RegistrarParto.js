@@ -260,6 +260,7 @@ export default ({ navigation }) => {
               fbaja: fbaja,
               mbaja: mbaja,
               rodeo: 0,
+              grupo: animal.grupo || 0,
               sugerido: 0
             }
           } else {

@@ -2,14 +2,13 @@
   "expo": {
     "name": "Farmerin",
     "slug": "farmerinapps",
-    "version": "3.2.6",
+    "version": "4.1.0",
     "orientation": "portrait",
-    "icon": "./assets/iconoFW.jpg",
+    "icon": "./assets/iconoFW.png",
     "splash": {
       "image": "./assets/logolargo2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF",
-      "text": "AS"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -17,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ar.com.farmerin",
-      "buildNumber": "45"
+      "buildNumber": "46"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +24,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.farmerin.farmerin",
-      "versionCode": 56,
+      "versionCode": 57,
       "permissions": [
         "CAMERA",
         "NOTIFICATIONS"
@@ -36,9 +35,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "c35515fc-2236-4e51-9a6c-fda7042d58d7"
+        "projectId": "e9517c81-471b-4ad7-93bd-856df0b8e472"
       }
     },
-    "owner": "farmerinfacundo"
+    "owner": "farmerinnav"
   }
 }

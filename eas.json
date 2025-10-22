@@ -13,16 +13,18 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
       },
       "env": {
         "NPM_FLAGS": "--legacy-peer-deps"
       }
     },
     "production": {
-      "distribution": "internal",
+      "distribution": "store",
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle",
+        "image": "latest"
       },
       "env": {
         "NPM_FLAGS": "--legacy-peer-deps"
