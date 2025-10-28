@@ -85,17 +85,31 @@ const BaseStack = () => (
 );
 
 export default function App() {
-// registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
+  // registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <MovieProvider>
-          <NavigationContainer>
-            <BaseStack />
-          </NavigationContainer>
-        </MovieProvider>
-      </Provider>
-    </GestureHandlerRootView>
-  );
+  try {
+    console.log('🚀 Iniciando aplicación Farmerin...');
+
+    // Puedes colocar más validaciones aquí si lo necesitás, por ejemplo:
+    if (!store) {
+      throw new Error('❌ No se pudo cargar el store de Redux');
+    }
+
+    console.log('✅ Aplicación iniciada correctamente');
+
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <MovieProvider>
+            <NavigationContainer>
+              <BaseStack />
+            </NavigationContainer>
+          </MovieProvider>
+        </Provider>
+      </GestureHandlerRootView>
+    );
+  } catch (error) {
+    console.error('💥 Error al iniciar la aplicación:', error);
+    return null; // Evita que la app se rompa completamente
+  }
 }
