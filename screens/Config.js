@@ -7,6 +7,7 @@ import SelectTambo from './SelectTambo';
 import { connect } from 'react-redux';
 import { selectTambo } from '../src/reducers/tambo';
 import Modal from 'react-native-modal';
+import firebase from '../database/firebase';
 
 const Config = ({ navigation, tambo, selectTambo }) => {
   const [showTambos, setShowTambos] = useState(false);
@@ -88,8 +89,9 @@ const Config = ({ navigation, tambo, selectTambo }) => {
             />
           </View>
           <View style={styles.footer}>
-            <Text style={styles.textVersion}>Version 4.0.0</Text>
+            <Text style={styles.textVersion}>Version 4.1.0</Text>
             <Text style={styles.textVersion}>Farmerin Division S.A. - &copy; 2020</Text>
+            <Text style={styles.textVersion}>Developed by Facundo Peralta & Farmerin Team</Text>
           </View>
         </>
       )}
@@ -105,11 +107,24 @@ const Config = ({ navigation, tambo, selectTambo }) => {
             <Text style={{ marginVertical: 10 }}>{alerta.mensaje}</Text>
             <Button
               title="ACEPTAR"
-              onPress={() => {
+              onPress={async () => {
                 setSesionCerrada(true);
                 setAlerta({ ...alerta, show: false });
-                AsyncStorage.removeItem('usuario');
-                AsyncStorage.removeItem('nombre');
+
+                // Cerrar sesión en Firebase
+                try {
+                  await firebase.autenticacion.signOut();
+                  console.log('✅ Sesión cerrada en Firebase');
+                } catch (error) {
+                  console.log('❌ Error cerrando sesión en Firebase:', error);
+                }
+
+                // Limpiar datos de AsyncStorage incluyendo la preferencia de recordar sesión
+                await AsyncStorage.removeItem('usuario');
+                await AsyncStorage.removeItem('nombre');
+                await AsyncStorage.removeItem('rememberSession');
+                console.log('✅ Datos de sesión limpiados de AsyncStorage');
+
                 setTimeout(() => {
                   setSesionCerrada(false);
                   navigation.navigate('OnBoarding');

@@ -2,11 +2,11 @@
   "expo": {
     "name": "Farmerin",
     "slug": "farmerinapps",
-    "version": "3.2.6",
+    "version": "4.1.0",
     "orientation": "portrait",
     "icon": "./assets/iconoFW.jpg",
     "splash": {
-      "image": "./assets/logolargo2.png",
+      "image": "./assets/LaktoFeeder.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF",
       "text": "AS"
@@ -21,24 +21,37 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Newadaptive-iconwhite.png",
+        "foregroundImage": "./assets/LaktoFeeder.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.farmerin.farmerin",
-      "versionCode": 56,
+      "versionCode": 70,
       "permissions": [
         "CAMERA",
-        "NOTIFICATIONS"
-      ]
+        "NOTIFICATIONS",
+        "INTERNET"
+      ],
+      "usesCleartextTraffic": true
     },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "28.0.12674087",
+            "useLegacyPackaging": false
+          }
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "c35515fc-2236-4e51-9a6c-fda7042d58d7"
+        "projectId": "1c4035a0-8f45-4a52-bee2-12698847d4b3"
       }
     },
-    "owner": "farmerinfacundo"
+    "owner": "farmerinfacup"
   }
 }

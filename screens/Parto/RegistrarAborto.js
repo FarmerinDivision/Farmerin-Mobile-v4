@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, FlatList, TextInput, TouchableHighlight } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TextInput, TouchableHighlight, ScrollView, TouchableOpacity } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useFormik } from 'formik';
 import InfoAnimal from '../InfoAnimal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import DropDownPicker from 'react-native-dropdown-picker';
+// import DropDownPicker from 'react-native-dropdown-picker';
 //import 'expo-firestore-offline-persistence';
 
 
@@ -28,7 +28,7 @@ export default function RegistroAborto({ navigation }) {
     { value: 'Aborto', label: 'ABORTO' },
     { value: 'Aborto inicia lactancia', label: 'ABORTO INICIA LACTANCIA' },
   ]);
-  
+
   // Estados para DropDownPicker
   const [openTipo, setOpenTipo] = useState(false);
   const [openTratamiento, setOpenTratamiento] = useState(false);
@@ -175,55 +175,93 @@ export default function RegistroAborto({ navigation }) {
         )}
         <Text style={styles.texto}>TIPO:</Text>
         <View style={{ zIndex: 2000, marginBottom: 15 }}>
-          <DropDownPicker
-            open={openTipo}
-            value={formAborto.values.tipo}
-            items={options}
-            setOpen={setOpenTipo}
-            setItems={setOptions}
-            setValue={callback => {
-              const val = callback();
-              formAborto.setFieldValue('tipo', val);
-            }}
-            placeholder="Seleccionar tipo"
-            zIndex={2000}
-            zIndexInverse={1000}
-            style={{
-              borderColor: '#d0d0d0',
-              borderRadius: 12,
-              backgroundColor: '#ffffff',
-            }}
-            dropDownContainerStyle={{
-              borderColor: '#d0d0d0',
-              backgroundColor: '#ffffff',
-            }}
-          />
+          <TouchableOpacity
+            style={styles.selectorButton}
+            onPress={() => setOpenTipo(true)}
+          >
+            <Text style={styles.selectorText}>
+              {options.find(i => i.value === formAborto.values.tipo)?.label || 'SELECCIONAR TIPO'}
+            </Text>
+            <Icon name="chevron-down" size={15} color="#555" />
+          </TouchableOpacity>
+
+          <Modal
+            isVisible={openTipo}
+            onBackdropPress={() => setOpenTipo(false)}
+            style={styles.modalStyle}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>SELECCIONAR TIPO</Text>
+              <ScrollView style={styles.listContainer}>
+                {options.map((item) => (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={styles.optionItem}
+                    onPress={() => {
+                      formAborto.setFieldValue('tipo', item.value);
+                      setOpenTipo(false);
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.label}</Text>
+                    {formAborto.values.tipo === item.value && (
+                      <Icon name="check" size={20} color="#1b829b" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Button
+                title="CERRAR"
+                onPress={() => setOpenTipo(false)}
+                buttonStyle={styles.closeButton}
+                containerStyle={{ width: '100%', marginTop: 10 }}
+              />
+            </View>
+          </Modal>
         </View>
         <Text style={styles.texto}>TRATAMIENTO:</Text>
         <View style={{ zIndex: 1000, marginBottom: 15 }}>
-          <DropDownPicker
-            open={openTratamiento}
-            value={formAborto.values.tratamiento}
-            items={tratamientoOptions}
-            setOpen={setOpenTratamiento}
-            setItems={setTratamientoOptions}
-            setValue={callback => {
-              const val = callback();
-              formAborto.setFieldValue('tratamiento', val);
-            }}
-            placeholder="Seleccionar tratamiento"
-            zIndex={1000}
-            zIndexInverse={2000}
-            style={{
-              borderColor: '#d0d0d0',
-              borderRadius: 12,
-              backgroundColor: '#ffffff',
-            }}
-            dropDownContainerStyle={{
-              borderColor: '#d0d0d0',
-              backgroundColor: '#ffffff',
-            }}
-          />
+          <TouchableOpacity
+            style={styles.selectorButton}
+            onPress={() => setOpenTratamiento(true)}
+          >
+            <Text style={styles.selectorText}>
+              {tratamientoOptions.find(i => i.value === formAborto.values.tratamiento)?.label || 'SELECCIONAR TRATAMIENTO'}
+            </Text>
+            <Icon name="chevron-down" size={15} color="#555" />
+          </TouchableOpacity>
+
+          <Modal
+            isVisible={openTratamiento}
+            onBackdropPress={() => setOpenTratamiento(false)}
+            style={styles.modalStyle}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>SELECCIONAR TRATAMIENTO</Text>
+              <ScrollView style={styles.listContainer}>
+                {tratamientoOptions.map((item) => (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={styles.optionItem}
+                    onPress={() => {
+                      formAborto.setFieldValue('tratamiento', item.value);
+                      setOpenTratamiento(false);
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.label}</Text>
+                    {formAborto.values.tratamiento === item.value && (
+                      <Icon name="check" size={20} color="#1b829b" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Button
+                title="CERRAR"
+                onPress={() => setOpenTratamiento(false)}
+                buttonStyle={styles.closeButton}
+                containerStyle={{ width: '100%', marginTop: 10 }}
+              />
+            </View>
+          </Modal>
         </View>
       </View>
       <Button
@@ -305,5 +343,58 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 15,
     paddingVertical: 10,
+  },
+  selectorButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 15,
+  },
+  selectorText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  modalStyle: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 22,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#1b829b',
+  },
+  listContainer: {
+    marginBottom: 10,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  optionText: {
+    fontSize: 18,
+    color: '#333',
+  },
+  closeButton: {
+    backgroundColor: '#999',
+    borderRadius: 8,
+    paddingVertical: 12,
   },
 });

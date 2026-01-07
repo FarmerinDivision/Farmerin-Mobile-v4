@@ -2,6 +2,7 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -20,27 +21,33 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// Configurar Firestore con persistencia offline
+// Inicializar servicios compat
 const db = firebase.firestore();
-db.enablePersistence()
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.log("La persistencia offline solo se puede habilitar en una pestaña a la vez.");
-    } else if (err.code === 'unimplemented') {
-      console.log("El navegador actual no admite la persistencia sin conexión.");
-    }
-  });
-
-// Configurar almacenamiento y autenticación
 const almacenamiento = firebase.storage();
 const autenticacion = firebase.auth();
 
-// Exportar servicios de Firebase para uso en otros archivos
-export { almacenamiento, autenticacion, db };
+console.log('🔐 Firebase Auth (compat) inicializada.');
 
-// Obtener usuario autenticado (si lo necesitas para depuración)
-const user = autenticacion.currentUser;
-console.log("Usuario autenticado:", user);
+// Persistencia OFFLINE Firestore
+db.enablePersistence()
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.log("⚠️ La persistencia offline solo se puede habilitar en una pestaña a la vez.");
+    } else if (err.code === 'unimplemented') {
+      console.log("⚠️ El dispositivo actual no admite persistencia offline.");
+    }
+  });
+
+/**
+ * 🔥 PERSISTENCIA DE SESIÓN EN REACT NATIVE
+ * En React Native con Firebase compat, la persistencia funciona automáticamente
+ * No necesitamos configurar setPersistence() ya que Firebase Auth maneja esto internamente
+ * usando el almacenamiento nativo del dispositivo
+ */
+console.log("🔐 Persistencia de sesión automática (Firebase compat en React Native)");
+
+// Exportar servicios
+export { almacenamiento, autenticacion, db };
 
 export default {
   firebase,

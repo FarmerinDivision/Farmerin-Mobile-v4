@@ -14,8 +14,7 @@ import { useRoute } from '@react-navigation/core';
 export default ({ navigation }) => {
 
   const route = useRoute();
-  const {tambo} = route.params;
-  const {usuario} = route.params;
+  const { tambo, usuario, usuarioUid } = route.params || {};
 
   const [loading, setLoading] = useState(false);
   const [recepciones, setRecepciones] = useState('');
@@ -137,8 +136,9 @@ export default ({ navigation }) => {
         }
         onPress={() => {
           navigation.push('RegistrarRecepcion', {
-            tambo: tambo,
-            usuario: usuario,
+            tambo,
+            usuario,
+            usuarioUid,
           });
         }}
         buttonStyle={styles.button}

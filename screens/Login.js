@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, ActivityIndicator, TextInput, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, ActivityIndicator, TextInput, TouchableOpacity, Modal, Switch } from 'react-native';
 import { Button } from 'react-native-elements';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { Ionicons } from '@expo/vector-icons'; // Asegúrate de tener este paquete instalado
@@ -38,12 +38,29 @@ const CustomPasswordInput = ({ onChangeText, value }) => {
 
 export default ({ navigation }) => {
   const [loading, setLoading] = useState(false);
+  const [rememberSession, setRememberSession] = useState(true); // Por defecto activado
   const [alerta, setAlerta] = useState({
     show: false,
     titulo: '',
     mensaje: '',
     color: '#FF5252'
   });
+
+  // Cargar preferencia guardada al iniciar
+  useEffect(() => {
+    const loadRememberPreference = async () => {
+      try {
+        const savedPreference = await AsyncStorage.getItem('rememberSession');
+        if (savedPreference !== null) {
+          setRememberSession(savedPreference === 'true');
+          console.log('📝 Preferencia de recordar sesión cargada:', savedPreference === 'true');
+        }
+      } catch (error) {
+        console.log('❌ Error cargando preferencia de recordar sesión:', error);
+      }
+    };
+    loadRememberPreference();
+  }, []);
 
   const validate = values => {
     const errors = {};
@@ -67,18 +84,52 @@ export default ({ navigation }) => {
     onSubmit: datos => Login(datos)
   });
 
-  const guardarUsuario = async (usuario, nombreUsuario) => {
+  const guardarUsuario = async (usuario, nombreUsuario, userEmail) => {
     try {
+      // Guardar preferencia de mantener sesión iniciada PRIMERO
+      await AsyncStorage.setItem('rememberSession', rememberSession.toString());
+      console.log('✅ Preferencia "Mantener sesión iniciada" guardada:', rememberSession);
+
+      // Guardar información del usuario
       await AsyncStorage.setItem('usuario', usuario);
       await AsyncStorage.setItem('nombre', nombreUsuario);
-      navigation.navigate('Root');
+      if (userEmail) {
+        await AsyncStorage.setItem('userEmail', userEmail);
+      }
+      console.log('✅ Usuario guardado en AsyncStorage:', usuario);
+
+      // Obtener y guardar el token de autenticación para verificación posterior
+      try {
+        const currentUser = firebase.autenticacion.currentUser;
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken();
+          await AsyncStorage.setItem('authToken', idToken);
+          console.log('✅ Token de autenticación guardado');
+        }
+      } catch (tokenError) {
+        console.log('⚠️ Error obteniendo token:', tokenError);
+      }
+
+      // Esperar un momento para asegurar que Firebase guarde la sesión
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Verificar que la sesión se guardó correctamente
+      const currentUser = firebase.autenticacion.currentUser;
+      if (currentUser) {
+        console.log('✅ Sesión de Firebase confirmada:', currentUser.uid);
+      }
+
+      // Navegar a la app principal
+      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
     } catch (error) {
+      console.log('❌ Error guardando usuario:', error);
       setAlerta({
         show: true,
         titulo: 'Error',
-        mensaje: error.message,
+        mensaje: error.message || 'Error al guardar la sesión',
         color: '#FF5252'
       });
+      setLoading(false);
     }
   };
 
@@ -86,20 +137,39 @@ export default ({ navigation }) => {
     setLoading(true);
     const { usuario, clave } = datos;
 
-    await firebase.autenticacion.signInWithEmailAndPassword(usuario, clave)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        guardarUsuario(user.uid, user.displayName); // Aquí es donde se navega a 'Eventos'
-      })
-      .catch(() => {
-        setAlerta({
-          show: true,
-          titulo: 'Error',
-          mensaje: "Usuario o contraseña incorrectos.",
-          color: '#FF5252'
-        });
-        setLoading(false);
+    try {
+      console.log('🔐 Intentando login con:', usuario);
+      const userCredential = await firebase.autenticacion.signInWithEmailAndPassword(usuario.trim(), clave);
+      const user = userCredential.user;
+      console.log('✅ Login exitoso. UID:', user.uid);
+      await guardarUsuario(user.uid, user.displayName || user.email || 'Usuario', user.email);
+    } catch (error) {
+      console.log('❌ Error en login:', error.code, error.message);
+      let mensajeError = "Usuario o contraseña incorrectos.";
+
+      // Mensajes de error más específicos
+      if (error.code === 'auth/user-not-found') {
+        mensajeError = "No existe una cuenta con este correo electrónico.";
+      } else if (error.code === 'auth/wrong-password') {
+        mensajeError = "La contraseña es incorrecta.";
+      } else if (error.code === 'auth/invalid-email') {
+        mensajeError = "El formato del correo electrónico no es válido.";
+      } else if (error.code === 'auth/user-disabled') {
+        mensajeError = "Esta cuenta ha sido deshabilitada.";
+      } else if (error.code === 'auth/network-request-failed') {
+        mensajeError = "Error de conexión. Verifica tu internet.";
+      } else if (error.message) {
+        mensajeError = error.message;
+      }
+
+      setAlerta({
+        show: true,
+        titulo: 'Error de autenticación',
+        mensaje: mensajeError,
+        color: '#FF5252'
       });
+      setLoading(false);
+    }
   }
 
   return (
@@ -116,7 +186,10 @@ export default ({ navigation }) => {
               style={styles.input}
               placeholder="Correo Electrónico"
               placeholderTextColor="#757575"
+              value={formLogin.values.usuario}
               onChangeText={formLogin.handleChange('usuario')}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
             {formLogin.errors.usuario && <Text style={styles.errorText}>{formLogin.errors.usuario}</Text>}
 
@@ -125,6 +198,18 @@ export default ({ navigation }) => {
               value={formLogin.values.clave}
             />
             {formLogin.errors.clave && <Text style={styles.errorText}>{formLogin.errors.clave}</Text>}
+
+            {/* Toggle para mantener sesión iniciada */}
+            <View style={styles.rememberContainer}>
+              <Switch
+                value={rememberSession}
+                onValueChange={setRememberSession}
+                trackColor={{ false: '#767577', true: '#4cb050' }}
+                thumbColor={rememberSession ? '#fff' : '#f4f3f4'}
+                ios_backgroundColor="#3e3e3e"
+              />
+              <Text style={styles.rememberText}>Mantener sesión iniciada</Text>
+            </View>
 
             <Button
               title="Ingresar"
@@ -143,8 +228,9 @@ export default ({ navigation }) => {
             />
           </View>
           <View style={styles.footer}>
-            <Text style={styles.textVersion}>Version 4.0.0</Text>
+            <Text style={styles.textVersion}>Version 4.1.0</Text>
             <Text style={styles.textVersion}>Farmerin Division S.A. - &copy; 2020</Text>
+            <Text style={styles.textVersion}>Developed by Facundo Peralta & Farmerin Team</Text>
           </View>
 
 
@@ -315,5 +401,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  
+  rememberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    marginTop: 5,
+  },
+  rememberText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#212121',
+  },
 });
