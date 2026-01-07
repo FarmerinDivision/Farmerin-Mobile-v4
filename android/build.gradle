@@ -6,15 +6,37 @@ buildscript {
     mavenCentral()
   }
   dependencies {
+<<<<<<< HEAD
     // Actualizado a AGP 8.5.1+ para compatibilidad con páginas de 16 KB (Android 15)
     classpath('com.android.tools.build:gradle:8.5.1')
+=======
+    classpath('com.android.tools.build:gradle')
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
     classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
   }
 }
 
+<<<<<<< HEAD
 allprojects {
   repositories {
+=======
+def reactNativeAndroidDir = new File(
+  providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('react-native/package.json')")
+  }.standardOutput.asText.get().trim(),
+  "../android"
+)
+
+allprojects {
+  repositories {
+    maven {
+      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+      url(reactNativeAndroidDir)
+    }
+
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }

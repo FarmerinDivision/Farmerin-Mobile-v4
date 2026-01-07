@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler'; // Importa GestureHandlerRootView
 import { Provider } from 'react-redux';
 import store from './src/store';
@@ -85,17 +85,31 @@ const BaseStack = () => (
 );
 
 export default function App() {
-// registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
+  // registerNNPushToken(4382, 'XSlDDRiRyq1qAZLssswMTu');
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <MovieProvider>
-          <NavigationContainer>
-            <BaseStack />
-          </NavigationContainer>
-        </MovieProvider>
-      </Provider>
-    </GestureHandlerRootView>
-  );
+  try {
+    console.log('🚀 Iniciando aplicación Farmerin...');
+
+    // Puedes colocar más validaciones aquí si lo necesitás, por ejemplo:
+    if (!store) {
+      throw new Error('❌ No se pudo cargar el store de Redux');
+    }
+
+    console.log('✅ Aplicación iniciada correctamente');
+
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <MovieProvider>
+            <NavigationContainer>
+              <BaseStack />
+            </NavigationContainer>
+          </MovieProvider>
+        </Provider>
+      </GestureHandlerRootView>
+    );
+  } catch (error) {
+    console.error('💥 Error al iniciar la aplicación:', error);
+    return null; // Evita que la app se rompa completamente
+  }
 }

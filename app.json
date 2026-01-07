@@ -4,12 +4,11 @@
     "slug": "farmerinapps",
     "version": "4.1.0",
     "orientation": "portrait",
-    "icon": "./assets/iconoFW.jpg",
+    "icon": "./assets/iconoFW.png",
     "splash": {
       "image": "./assets/LaktoFeeder.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF",
-      "text": "AS"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -17,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ar.com.farmerin",
-      "buildNumber": "45"
+      "buildNumber": "46"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +24,11 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.farmerin.farmerin",
+<<<<<<< HEAD
       "versionCode": 70,
+=======
+      "versionCode": 70,
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
       "permissions": [
         "CAMERA",
         "NOTIFICATIONS",
@@ -49,9 +52,16 @@
     },
     "extra": {
       "eas": {
+<<<<<<< HEAD
         "projectId": "1c4035a0-8f45-4a52-bee2-12698847d4b3"
       }
     },
     "owner": "farmerinfacup"
+=======
+        "projectId": "f46f5b46-71c3-41e9-ab6b-8089da6bed32"
   }
+},
+"owner": "farmerinexpodev"
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
+}
 }

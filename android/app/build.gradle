@@ -100,10 +100,15 @@ android {
         applicationId 'com.farmerin.farmerin'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+<<<<<<< HEAD
         versionCode 70
         versionName "4.1.0"
  
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+=======
+        versionCode 57
+        versionName "4.1.0"
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
     }
     signingConfigs {
         debug {
@@ -125,8 +130,12 @@ android {
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+<<<<<<< HEAD
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
             crunchPngs enablePngCrunchInRelease.toBoolean()
+=======
+            crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+>>>>>>> 84067737b450f88a58d0e1ee144c5a089e5345d1
         }
     }
     packagingOptions {
